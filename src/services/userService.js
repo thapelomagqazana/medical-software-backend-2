@@ -1,19 +1,18 @@
 const User = require("../models/User");
 
-const getUserById = async (userId) => {
+const getUserByIdService = async (userId) => {
     try {
         const user = await User.findById(userId).select("-password");
         if (!user){
             throw new Error("User not found");
         }
-
         return user;
     } catch (error) {
         throw new Error(error.message);
     }
 };
 
-const updateUserProfile = async (userId, updateProfile) => {
+const updateUserProfileService = async (userId, updateProfile) => {
     try {
         const user = await User.findByIdAndUpdate(userId, updateProfile, { new: true });
         if (!user) {
@@ -25,7 +24,7 @@ const updateUserProfile = async (userId, updateProfile) => {
     }
 };
 
-const deleteUserProfile = async (userId) => {
+const deleteUserProfileService = async (userId) => {
     try {
         const user = await User.findByIdAndDelete(userId);
         if (!user) {
@@ -38,7 +37,7 @@ const deleteUserProfile = async (userId) => {
 };
 
 module.exports = {
-    getUserById,
-    updateUserProfile,
-    deleteUserProfile,
+    getUserByIdService,
+    updateUserProfileService,
+    deleteUserProfileService,
 };

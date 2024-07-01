@@ -12,7 +12,7 @@ exports.registerUser = async (req, res) => {
 
     try {
         // Call registerUser from authService
-        const result = await authService.registerUser({ email, password, role, firstName, lastName });
+        const result = await authService.registerUserService({ email, password, role, firstName, lastName });
 
         if (result.error){
             return res.status(400).json({ msg: result.error });
@@ -36,7 +36,7 @@ exports.loginUser = async (req, res) => {
   
     try {
       // Call loginUser from authService
-      const result = await authService.loginUser({ email, password });
+      const result = await authService.loginUserService({ email, password });
 
   
       if (result.error) {

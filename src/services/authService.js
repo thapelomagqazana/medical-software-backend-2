@@ -5,7 +5,7 @@ const User = require("../models/User");
 require('dotenv').config();
 
 // Register a new user
-exports.registerUser = async ({ email, password, role, firstName, lastName }) => {
+exports.registerUserService = async ({ email, password, role, firstName, lastName }) => {
     try {
         let user = await User.findOne({ email });
 
@@ -34,7 +34,7 @@ exports.registerUser = async ({ email, password, role, firstName, lastName }) =>
 };
 
 // Authenticate user and generate JWT token
-exports.loginUser = async ({ email, password }) => {
+exports.loginUserService = async ({ email, password }) => {
     try {
         let user = await User.findOne({ email });
 
@@ -53,7 +53,6 @@ exports.loginUser = async ({ email, password }) => {
                 role: user.role,
             },
         };
-
         const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: "1h" });
         return { token };
     } catch (error) {
