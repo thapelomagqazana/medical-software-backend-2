@@ -17,8 +17,9 @@ afterEach(async () => {
 });
 
 afterAll(async () => {
+    await User.deleteMany();
   // Disconnect MongoDB connection
-  await mongoose.disconnect();
+    await mongoose.disconnect();
 });
 
 describe('POST /api/auth/register', () => {

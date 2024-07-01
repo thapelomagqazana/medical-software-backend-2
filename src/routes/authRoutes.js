@@ -3,9 +3,11 @@ const { check } = require('express-validator');
 const router = express.Router();
 const { registerUser, loginUser } = require('../controllers/authController');
 
-// @route   POST api/auth/register
-// @desc    Register a user
-// @access  Public
+/**
+ * @route   POST api/auth/register
+ * @desc    Register a user
+ * @access  Public
+ */
 router.post(
   '/register',
   [
@@ -17,9 +19,11 @@ router.post(
   registerUser
 );
 
-// @route   POST api/auth/login
-// @desc    Authenticate user & get token
-// @access  Public
+/**
+ * @route   POST api/auth/login
+ * @desc    Authenticate user & get token
+ * @access  Public
+ */
 router.post(
   '/login',
   [

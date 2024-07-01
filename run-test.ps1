@@ -1,6 +1,7 @@
 # Define an array of test files
 $testFiles = @(
-    "tests/auth.test.js"
+    "tests/auth.test.js",
+    "tests/profile.test.js"
 )
 
 # Loop through each test file
