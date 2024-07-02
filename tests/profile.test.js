@@ -90,6 +90,44 @@ describe("Profile API Tests", () => {
         expect(res.body).toHaveProperty('lastName', 'User');
     });
 
+    it('should return 400 for invalid user ID format', async () => {
+        const res = await request(app)
+            .get(`/api/profile/me/invalidUserID`)
+            .set('Authorization', userAuthToken);
+
+        expect(res.status).toBe(400);
+        expect(res.body).toHaveProperty('errors');
+        expect(res.body.errors[0].msg).toBe('Invalid user ID format');
+    });
+
+    it('should return 400 for missing first name in update profile request', async () => {
+        const updatedProfile = {
+            lastName: 'User',
+        };
+        const res = await request(app)
+            .put(`/api/profile/edit/${userId}`)
+            .send(updatedProfile)
+            .set('Authorization', userAuthToken);
+
+        expect(res.status).toBe(400);
+        expect(res.body).toHaveProperty('errors');
+        expect(res.body.errors[0].msg).toBe('Invalid value');
+    });
+
+    it('should return 400 for missing last name in update profile request', async () => {
+        const updatedProfile = {
+            firstName: 'Updated',
+        };
+        const res = await request(app)
+            .put(`/api/profile/edit/${userId}`)
+            .send(updatedProfile)
+            .set('Authorization', userAuthToken);
+
+        expect(res.status).toBe(400);
+        expect(res.body).toHaveProperty('errors');
+        expect(res.body.errors[0].msg).toBe('Invalid value');
+    });
+
     it('should delete user profile', async () => {
         const res = await request(app)
             .delete(`/api/profile/delete/${userId}`)

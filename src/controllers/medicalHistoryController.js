@@ -1,4 +1,10 @@
-const { getMedicalHistoryService, addMedicalRecordService, updateMedicalRecordService, deleteMedicalRecordService } = require("../services/medicalHistoryService");
+const { 
+    getMedicalHistoryService, 
+    addMedicalRecordService, 
+    updateMedicalRecordService, 
+    deleteMedicalRecordService } = require("../services/medicalHistoryService");
+
+const { validationResult } = require("express-validator");
 
 /**
  * Get medical history for a user
@@ -6,6 +12,11 @@ const { getMedicalHistoryService, addMedicalRecordService, updateMedicalRecordSe
  * @returns {Array} List of medical records
  */
 exports.getMedicalHistory = async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()){
+        return res.status(400).json({ errors: errors.array() });
+    }
+
     try {
         const userId = req.params.userId;
         const medicalHistory = await getMedicalHistoryService(userId);
@@ -23,6 +34,11 @@ exports.getMedicalHistory = async (req, res) => {
  * @returns {Object} Added medical record
  */
 exports.addMedicalRecord = async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()){
+        return res.status(400).json({ errors: errors.array() });
+    }
+
     try {
         const userId = req.params.userId;
         const { condition, diagnosisDate } = req.body;
@@ -42,6 +58,11 @@ exports.addMedicalRecord = async (req, res) => {
  * @returns {Object} Updated medical record
  */
 exports.updateMedicalRecord = async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()){
+        return res.status(400).json({ errors: errors.array() });
+    }
+
     try {
         const recordId = req.params.recordId;
         const updatedRecord = req.body;
@@ -64,6 +85,11 @@ exports.updateMedicalRecord = async (req, res) => {
  * @returns {string} Message confirming deletion
  */
 exports.deleteMedicalRecord = async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()){
+        return res.status(400).json({ errors: errors.array() });
+    }
+    
     try {
         const recordId = req.params.recordId;
         await deleteMedicalRecordService(recordId);

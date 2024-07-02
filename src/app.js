@@ -2,6 +2,7 @@ const express = require("express");
 const authRoutes = require("./routes/authRoutes");
 const profileRoutes = require("./routes/profileRoutes");
 const medicalHistoryRoutes = require("./routes/medicalHistoryRoutes");
+const appointmentRoutes = require("./routes/appointmentRoutes");
 
 const app = express();
 
@@ -23,6 +24,7 @@ app.use(express.json({ extended: false }));
 app.use("/api/auth", authRoutes);
 app.use("/api/profile", profileRoutes); // New profile routes
 app.use("/api/medical-history", medicalHistoryRoutes);
+app.use("/api/appointments", appointmentRoutes);
 
 /**
  * @description Default route to check if the API is running.

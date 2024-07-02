@@ -104,4 +104,65 @@ describe("Medical History Tracking API Tests", () => {
         const deletedRecord = await MedicalHistory.findById(recordId);
         expect(deletedRecord).toBeNull();
     });
+
+    it('should handle invalid user ID format for GET', async () => {
+        const res = await request(app)
+            .get('/api/medical-history/invalidUserId')
+            .set('Authorization', userAuthToken);
+        expect(res.status).toBe(400);
+        expect(res.body.errors[0].msg).toBe('Invalid user ID format');
+    });
+
+    it('should handle invalid user ID format for POST', async () => {
+        const newRecordData = {
+            condition: 'Sample Condition',
+            diagnosisDate: new Date(),
+        };
+        const res = await request(app)
+            .post('/api/medical-history/invalidUserId')
+            .send(newRecordData)
+            .set('Authorization', userAuthToken);
+        expect(res.status).toBe(400);
+        expect(res.body.errors[0].msg).toBe('Invalid user ID format');
+    });
+
+    it('should handle invalid record ID format for PUT', async () => {
+        const updatedRecordData = {
+            condition: 'Updated Condition',
+        };
+        const res = await request(app)
+            .put('/api/medical-history/invalidRecordId')
+            .send(updatedRecordData)
+            .set('Authorization', userAuthToken);
+        expect(res.status).toBe(400);
+        expect(res.body.errors[0].msg).toBe('Invalid record ID format');
+    });
+
+    it('should handle invalid record ID format for DELETE', async () => {
+        const res = await request(app)
+            .delete('/api/medical-history/invalidRecordId')
+            .set('Authorization', userAuthToken);
+        expect(res.status).toBe(400);
+        expect(res.body.errors[0].msg).toBe('Invalid record ID format');
+    });
+
+    it('should handle medical record not found error for PUT', async () => {
+        const updatedRecordData = {
+            condition: 'Updated Condition',
+        };
+        const res = await request(app)
+            .put(`/api/medical-history/${new mongoose.Types.ObjectId()}`)
+            .send(updatedRecordData)
+            .set('Authorization', userAuthToken);
+        expect(res.status).toBe(404);
+        expect(res.body.message).toBe('Medical record not found');
+    });
+
+    it('should handle medical record not found error for DELETE', async () => {
+        const res = await request(app)
+            .delete(`/api/medical-history/${new mongoose.Types.ObjectId()}`)
+            .set('Authorization', userAuthToken);
+        expect(res.status).toBe(404);
+        expect(res.body.message).toBe('Medical record not found');
+    });
 });

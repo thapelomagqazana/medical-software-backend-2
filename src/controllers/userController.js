@@ -1,4 +1,5 @@
 const { getUserByIdService, updateUserProfileService, deleteUserProfileService } = require("../services/userService");
+const { validationResult } = require("express-validator");
 
 /**
  * Get user profile by ID
@@ -6,6 +7,11 @@ const { getUserByIdService, updateUserProfileService, deleteUserProfileService }
  * @returns {Object} User profile information
  */
 exports.getProfile = async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+    }
+
     try {
         const userId = req.params.userId;
         const user = await getUserByIdService(userId);
@@ -27,6 +33,11 @@ exports.getProfile = async (req, res) => {
  * @returns {Object} Updated user profile
  */
 exports.updateProfile = async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+    }
+
     try {
         const userId = req.params.userId;
         const updatedProfile = req.body;
@@ -48,6 +59,11 @@ exports.updateProfile = async (req, res) => {
  * @returns {Object} Deleted user profile
  */
 exports.deleteProfile = async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+    }
+
     try {
         const userId = req.params.userId;
         const user = await deleteUserProfileService(userId);
