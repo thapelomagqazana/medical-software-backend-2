@@ -27,6 +27,7 @@ describe("Medical History Tracking API Tests", () => {
             .send({
                 email: 'testuser@example.com',
                 password: 'password',
+                confirmPassword: 'password',
                 role: 'patient',
                 firstName: 'Test',
                 lastName: 'User',

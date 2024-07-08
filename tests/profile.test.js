@@ -23,6 +23,7 @@ describe("Profile API Tests", () => {
             .send({
                 email: 'testuser@example.com',
                 password: 'password',
+                confirmPassword: 'password',
                 role: 'patient',
                 firstName: 'Test',
                 lastName: 'User',
@@ -43,6 +44,7 @@ describe("Profile API Tests", () => {
             .send({
                 email: 'testadmin@example.com',
                 password: 'password1',
+                confirmPassword: 'password1',
                 role: 'admin',
                 firstName: 'Admin',
                 lastName: 'User',
@@ -168,8 +170,6 @@ describe("Profile API Tests", () => {
             .delete(`/api/profile/delete/${userId}`)
             .set('Authorization', adminAuthToken);
         
-        
-
         expect(res.status).toBe(404);
         expect(res.body).toHaveProperty('message', 'User not found');
     });

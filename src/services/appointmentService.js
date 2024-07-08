@@ -64,3 +64,18 @@ exports.deleteAppointmentService = async (id) => {
         throw new Error(error.message);
     }
 };
+
+exports.getAppointmentsByPatientService = async (id) => {
+    try {
+        const upcomingAppointments = await Appointment.find({
+            patientId: id,
+            startTime: { $gte: new Date() }, // Filter for future appointments
+        }).sort({ startTime: 1 }); // Sort by ascending order of appointment start time
+
+        // console.log(upcomingAppointments);
+        return upcomingAppointments;
+
+    } catch (error) {
+        throw new Error(error.message);
+    }
+};

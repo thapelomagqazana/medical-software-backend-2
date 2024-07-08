@@ -5,8 +5,8 @@ const { grantAccess } = require('../middleware/rbacMiddleware');
 const { body, param } = require("express-validator");
 const appointmentController = require("../controllers/appointmentController");
 
-// GET /api/appointments
-router.get('/', authMiddleware, appointmentController.getAppointments);
+// GET /api/appointments/all
+router.get('/all', authMiddleware, appointmentController.getAppointments);
 
 // GET /api/appointments/:id
 router.get('/:id',[

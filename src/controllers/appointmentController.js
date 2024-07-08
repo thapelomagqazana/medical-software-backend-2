@@ -4,13 +4,15 @@ const {
     createAppointmentService,
     updateAppointmentService,
     deleteAppointmentService,
+    getAppointmentsByPatientService,
+
 } = require ("../services/appointmentService");
 
 const { validationResult } = require("express-validator");
 
 /**
  * @desc    Get all appointments
- * @route   GET /api/appointments
+ * @route   GET /api/appointments/all
  * @access  Public
  */
 exports.getAppointments = async (req, res) => {
@@ -114,4 +116,21 @@ exports.updateAppointment = async (req, res) => {
       }
       res.status(500).send('Server Error');
     }
+};
+
+/**
+ * @desc Retrieves a list of upcoming appointments for the logged-in patient
+ * @route GET /api/patient/appointments
+ * @access Private
+ */
+exports.getAppointmentsByPatient = async (req, res) => {
+  try {
+    const patientId = req.user.id;
+    const upcomingAppointments = await getAppointmentsByPatientService(patientId);
+
+    res.json(upcomingAppointments);
+  } catch (error) {
+    console.error(error.message);
+    res.status(500).send("Server Error");
+  }
 };

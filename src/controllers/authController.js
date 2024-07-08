@@ -8,7 +8,12 @@ exports.registerUser = async (req, res) => {
         return res.status(400).json({ errors: errors.array() });
     }
 
-    const { email, password, role, firstName, lastName } = req.body;
+    const { email, password, role, firstName, lastName, confirmPassword } = req.body;
+
+    
+    if (password !== confirmPassword) {
+      return res.status(400).json({ msg: "Passwords do not match" });
+    }
 
     try {
         // Call registerUser from authService

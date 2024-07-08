@@ -25,6 +25,7 @@ describe("Appointment API Tests", () => {
             .send({
                 email: 'testuser@example.com',
                 password: 'password',
+                confirmPassword: 'password',
                 role: 'patient',
                 firstName: 'Test',
                 lastName: 'User',
@@ -45,6 +46,7 @@ describe("Appointment API Tests", () => {
             .send({
                 email: 'testdoctor@example.com',
                 password: 'password1',
+                confirmPassword: 'password1',
                 role: 'doctor',
                 firstName: 'Doctor',
                 lastName: 'User',
@@ -63,13 +65,13 @@ describe("Appointment API Tests", () => {
         const newAppointment = {
             patientId: userId,
             doctorId: doctorId,
-            startTime: new Date(),
+            startTime: new Date(new Date().getTime() + 30 * 60 * 1000),
             endTime: new Date(new Date().getTime() + 60 * 60 * 1000), // 1 hour later
         };
         const appointmentResponse = await request(app)
             .post('/api/appointments')
             .send(newAppointment)
-            .set('Authorization', doctorAuthToken);
+            .set('Authorization', userAuthToken);
         appointmentId = appointmentResponse.body._id;
     });
 
@@ -81,12 +83,27 @@ describe("Appointment API Tests", () => {
 
     it('should fetch all appointments', async () => {
         const res = await request(app)
-            .get('/api/appointments')
+            .get('/api/appointments/all')
             .set('Authorization', doctorAuthToken);
         
         expect(res.status).toBe(200);
         expect(res.body).toBeInstanceOf(Array);
         expect(res.body.length).toBeGreaterThan(0);
+    });
+
+    it('should get upcoming appointments for the logged-in patient', async () => {
+        const res = await request(app)
+            .get('/api/patient/appointments')
+            .set('Authorization', userAuthToken);
+
+        expect(res.status).toBe(200);
+        expect(res.body).toHaveLength(1);
+        expect(res.body[0]).toHaveProperty('patientId', userId);
+        expect(res.body[0]).toHaveProperty('startTime');
+        // Convert startTime string to Date object
+        const startTime = new Date(res.body[0].startTime);
+        expect(startTime).toBeInstanceOf(Date);
+        // Additional assertions can be added based on your Appointment model structure
     });
 
     it('should fetch a single appointment by ID', async () => {

@@ -1,8 +1,12 @@
 const express = require("express");
+const bodyParser = require("body-parser");
+const cors = require("cors");
+const morgan = require("morgan");
 const authRoutes = require("./routes/authRoutes");
 const profileRoutes = require("./routes/profileRoutes");
 const medicalHistoryRoutes = require("./routes/medicalHistoryRoutes");
 const appointmentRoutes = require("./routes/appointmentRoutes");
+const patientRoutes = require("./routes/patientRoutes");
 
 const app = express();
 
@@ -20,11 +24,20 @@ const app = express();
  */
 app.use(express.json({ extended: false }));
 
+// Middleware
+app.use(bodyParser.json());
+app.use(cors());
+
+// Logging
+app.use(morgan("dev"));
+
+
 // Define Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/profile", profileRoutes); // New profile routes
 app.use("/api/medical-history", medicalHistoryRoutes);
 app.use("/api/appointments", appointmentRoutes);
+app.use("/api/patient", patientRoutes);
 
 /**
  * @description Default route to check if the API is running.

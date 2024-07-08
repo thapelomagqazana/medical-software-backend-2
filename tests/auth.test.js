@@ -29,11 +29,12 @@ describe('POST /api/auth/register', () => {
       .send({
         email: 'testuser@example.com',
         password: 'password',
+        confirmPassword: 'password',
         role: 'patient',
         firstName: 'Test',
         lastName: 'User',
       });
-
+    // console.log(res);
     expect(res.statusCode).toEqual(200);
     expect(res.body).toHaveProperty('msg', 'User registered successfully');
 
@@ -46,6 +47,7 @@ describe('POST /api/auth/register', () => {
       .send({
         email: 'duplicate@example.com',
         password: 'password',
+        confirmPassword: 'password',
         role: 'patient',
         firstName: 'Duplicate',
         lastName: 'User',
@@ -57,6 +59,7 @@ describe('POST /api/auth/register', () => {
       .send({
         email: 'duplicate@example.com',
         password: 'password',
+        confirmPassword: 'password',
         role: 'patient',
         firstName: 'Duplicate',
         lastName: 'User',
@@ -75,6 +78,7 @@ describe('POST /api/auth/login', () => {
       .send({
         email: 'loginuser@example.com',
         password: 'password',
+        confirmPassword: 'password',
         role: 'patient',
         firstName: 'Login',
         lastName: 'User',
