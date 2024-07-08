@@ -7,6 +7,7 @@ const profileRoutes = require("./routes/profileRoutes");
 const medicalHistoryRoutes = require("./routes/medicalHistoryRoutes");
 const appointmentRoutes = require("./routes/appointmentRoutes");
 const patientRoutes = require("./routes/patientRoutes");
+const doctorRoutes = require("./routes/doctorRoutes");
 
 const app = express();
 
@@ -38,6 +39,7 @@ app.use("/api/profile", profileRoutes); // New profile routes
 app.use("/api/medical-history", medicalHistoryRoutes);
 app.use("/api/appointments", appointmentRoutes);
 app.use("/api/patient", patientRoutes);
+app.use("/api/doctors", doctorRoutes);
 
 /**
  * @description Default route to check if the API is running.

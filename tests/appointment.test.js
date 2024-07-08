@@ -109,7 +109,7 @@ describe("Appointment API Tests", () => {
     it('should fetch a single appointment by ID', async () => {
         const res = await request(app)
             .get(`/api/appointments/${appointmentId}`)
-            .set('Authorization', doctorAuthToken);
+            .set('Authorization', userAuthToken);
 
         expect(res.status).toBe(200);
         expect(res.body).toHaveProperty('_id', appointmentId);
@@ -119,7 +119,7 @@ describe("Appointment API Tests", () => {
         const nonExistentId = new mongoose.Types.ObjectId();
         const res = await request(app)
             .get(`/api/appointments/${nonExistentId}`)
-            .set('Authorization', doctorAuthToken);
+            .set('Authorization', userAuthToken);
 
         expect(res.status).toBe(404);
         expect(res.body).toHaveProperty('msg', 'Appointment not found');
@@ -129,18 +129,52 @@ describe("Appointment API Tests", () => {
         const newAppointment = {
             patientId: userId,
             doctorId: doctorId,
-            startTime: new Date(),
-            endTime: new Date(new Date().getTime() + 60 * 60 * 1000), // 1 hour later
+            startTime: new Date('2024-07-15T09:00:00Z'),
+            endTime: new Date('2024-07-15T10:00:00Z'),
         };
         const res = await request(app)
             .post('/api/appointments')
             .send(newAppointment)
-            .set('Authorization', doctorAuthToken);
+            .set('Authorization', userAuthToken);
 
         expect(res.status).toBe(200);
         expect(res.body).toHaveProperty('patientId', userId);
         expect(res.body).toHaveProperty('doctorId', doctorId);
     });
+
+    it('should not allow double booking for the doctor', async () => {
+        const newAppointmentData = {
+            patientId: userId,
+            doctorId: doctorId,
+            startTime: new Date('2024-07-15T09:30:00Z'),
+            endTime: new Date('2024-07-15T10:30:00Z'),
+        };
+
+        const res = await request(app)
+            .post('/api/appointments')
+            .send(newAppointmentData)
+            .set('Authorization', userAuthToken);
+
+        expect(res.status).toBe(403);
+        expect(res.body).toHaveProperty('msg', 'Doctor is already booked during this time');
+    });
+
+    // it('should not allow double booking for the patient', async () => {
+    //     const newAppointmentData = {
+    //         patientId: userId,
+    //         doctorId: doctorId,
+    //         startTime: new Date('2024-07-15T09:00:00Z'),
+    //         endTime: new Date('2024-07-15T10:00:00Z'),
+    //     };
+
+    //     const res = await request(app)
+    //         .post('/api/appointments')
+    //         .send(newAppointmentData)
+    //         .set('Authorization', userAuthToken);
+
+    //     expect(res.status).toBe(403);
+    //     expect(res.body).toHaveProperty('msg', 'Patient already has an appointment during this time');
+    // });
 
     it('should update an existing appointment', async () => {
         const updatedAppointment = {

@@ -91,6 +91,12 @@ exports.createAppointment = async (req, res) => {
       res.json(appointment);
     } catch (err) {
       console.error(err.message);
+      if (err.message === 'Doctor is already booked during this time') {
+        return res.status(403).json({ msg: 'Doctor is already booked during this time' });
+      }
+      else if (err.message === 'Patient already has an appointment during this time'){
+        return res.status(403).json({ msg: 'Patient already has an appointment during this time' });
+      }
       res.status(500).send('Server Error');
     }
 };
@@ -113,6 +119,12 @@ exports.updateAppointment = async (req, res) => {
       console.error(err.message);
       if (err.message === 'Appointment not found') {
         return res.status(404).json({ msg: 'Appointment not found' });
+      }
+      else if (err.message === 'Doctor is already booked during this time') {
+        return res.status(403).json({ msg: 'Doctor is already booked during this time' });
+      }
+      else if (err.message === 'Patient already has an appointment during this time'){
+        return res.status(403).json({ msg: 'Patient already has an appointment during this time' });
       }
       res.status(500).send('Server Error');
     }
