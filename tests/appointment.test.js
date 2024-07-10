@@ -103,7 +103,6 @@ describe("Appointment API Tests", () => {
         // Convert startTime string to Date object
         const startTime = new Date(res.body[0].startTime);
         expect(startTime).toBeInstanceOf(Date);
-        // Additional assertions can be added based on your Appointment model structure
     });
 
     it('should fetch a single appointment by ID', async () => {
