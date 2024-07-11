@@ -4,7 +4,8 @@ const {
     createAppointmentService,
     updateAppointmentService,
     deleteAppointmentService,
-    getAppointmentsByPatientService,
+    getUpcomingAppointmentsByPatientService,
+    getAllAppointmentsByPatientService,
 
 } = require ("../services/appointmentService");
 
@@ -47,7 +48,7 @@ exports.deleteAppointment = async (req, res) => {
     } catch (err) {
       console.error(err.message);
       if (err.message === 'Appointment not found') {
-        return res.status(404).json({ msg: 'Appointment not found' });
+        return res.status(404).json({ msg: err.message });
       }
       res.status(500).send('Server Error');
     }
@@ -69,7 +70,7 @@ exports.getAppointmentById = async (req, res) => {
         res.json(appointment);
     } catch (error) {
         if (error.message === 'Appointment not found') {
-            return res.status(404).json({ msg: 'Appointment not found' });
+            return res.status(404).json({ msg: error.message });
         }
         res.status(500).send('Server Error');
     }
@@ -92,10 +93,10 @@ exports.createAppointment = async (req, res) => {
     } catch (err) {
       console.error(err.message);
       if (err.message === 'Doctor is already booked during this time') {
-        return res.status(403).json({ msg: 'Doctor is already booked during this time' });
+        return res.status(403).json({ msg: err.message });
       }
       else if (err.message === 'Patient already has an appointment during this time'){
-        return res.status(403).json({ msg: 'Patient already has an appointment during this time' });
+        return res.status(403).json({ msg: err.message });
       }
       res.status(500).send('Server Error');
     }
@@ -118,13 +119,13 @@ exports.updateAppointment = async (req, res) => {
     } catch (err) {
       console.error(err.message);
       if (err.message === 'Appointment not found') {
-        return res.status(404).json({ msg: 'Appointment not found' });
+        return res.status(404).json({ msg: err.message });
       }
       else if (err.message === 'Doctor is already booked during this time') {
-        return res.status(403).json({ msg: 'Doctor is already booked during this time' });
+        return res.status(403).json({ msg: err.message });
       }
       else if (err.message === 'Patient already has an appointment during this time'){
-        return res.status(403).json({ msg: 'Patient already has an appointment during this time' });
+        return res.status(403).json({ msg: err.message });
       }
       res.status(500).send('Server Error');
     }
@@ -132,15 +133,32 @@ exports.updateAppointment = async (req, res) => {
 
 /**
  * @desc Retrieves a list of upcoming appointments for the logged-in patient
+ * @route GET /api/patient/upcoming-appointments
+ * @access Private
+ */
+exports.getUpcomingAppointmentsByPatient = async (req, res) => {
+  try {
+    const patientId = req.user.id;
+    const upcomingAppointments = await getUpcomingAppointmentsByPatientService(patientId);
+
+    res.json(upcomingAppointments);
+  } catch (error) {
+    console.error(error.message);
+    res.status(500).send("Server Error");
+  }
+};
+
+/** 
+ * @desc    Get all appointments by patientID
  * @route GET /api/patient/appointments
  * @access Private
  */
-exports.getAppointmentsByPatient = async (req, res) => {
+exports.getAllAppointmentsByPatient = async (req, res) => {
   try {
     const patientId = req.user.id;
-    const upcomingAppointments = await getAppointmentsByPatientService(patientId);
+    const appointments = await getAllAppointmentsByPatientService(patientId);
 
-    res.json(upcomingAppointments);
+    res.json(appointments);
   } catch (error) {
     console.error(error.message);
     res.status(500).send("Server Error");

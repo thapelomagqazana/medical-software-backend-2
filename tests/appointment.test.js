@@ -93,6 +93,20 @@ describe("Appointment API Tests", () => {
 
     it('should get upcoming appointments for the logged-in patient', async () => {
         const res = await request(app)
+            .get('/api/patient/upcoming-appointments')
+            .set('Authorization', userAuthToken);
+
+        expect(res.status).toBe(200);
+        expect(res.body).toHaveLength(1);
+        expect(res.body[0]).toHaveProperty('patientId', userId);
+        expect(res.body[0]).toHaveProperty('startTime');
+        // Convert startTime string to Date object
+        const startTime = new Date(res.body[0].startTime);
+        expect(startTime).toBeInstanceOf(Date);
+    });
+
+    it('should get all appointments for the logged-in patient', async () => {
+        const res = await request(app)
             .get('/api/patient/appointments')
             .set('Authorization', userAuthToken);
 

@@ -124,7 +124,7 @@ exports.deleteAppointmentService = async (id) => {
     }
 };
 
-exports.getAppointmentsByPatientService = async (id) => {
+exports.getUpcomingAppointmentsByPatientService = async (id) => {
     try {
         const upcomingAppointments = await Appointment.find({
             patientId: id,
@@ -134,6 +134,21 @@ exports.getAppointmentsByPatientService = async (id) => {
 
         // console.log(upcomingAppointments);
         return upcomingAppointments;
+
+    } catch (error) {
+        throw new Error(error.message);
+    }
+};
+
+exports.getAllAppointmentsByPatientService = async (id) => {
+    try {
+        const appointments = await Appointment.find({
+            patientId: id,
+        }).sort({ startTime: 1 })
+        .populate('doctorId', 'firstName lastName'); // Sort by ascending order of appointment start time
+
+        // console.log(upcomingAppointments);
+        return appointments;
 
     } catch (error) {
         throw new Error(error.message);
