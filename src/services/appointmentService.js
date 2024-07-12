@@ -129,6 +129,7 @@ exports.getUpcomingAppointmentsByPatientService = async (id) => {
         const upcomingAppointments = await Appointment.find({
             patientId: id,
             startTime: { $gte: new Date() }, // Filter for future appointments
+            status: "scheduled",
         }).sort({ startTime: 1 })
         .populate('doctorId', 'firstName lastName'); // Sort by ascending order of appointment start time
 
