@@ -4,7 +4,18 @@ const User = require("../models/User");
 
 require('dotenv').config();
 
-// Register a new user
+/**
+ * Registers a new user in the database.
+ * 
+ * @param {Object} params - The registration details.
+ * @param {string} params.email - The user's email address.
+ * @param {string} params.password - The user's password.
+ * @param {string} params.role - The user's role.
+ * @param {string} params.firstName - The user's first name.
+ * @param {string} params.lastName - The user's last name.
+ * @returns {Promise<Object>} A promise that resolves to a message object on success, or an error object if the user already exists.
+ * @throws {Error} If there is a server error during the operation.
+ */
 exports.registerUserService = async ({ email, password, role, firstName, lastName }) => {
     try {
         let user = await User.findOne({ email });
@@ -33,7 +44,15 @@ exports.registerUserService = async ({ email, password, role, firstName, lastNam
     }
 };
 
-// Authenticate user and generate JWT token
+/**
+ * Authenticates a user and generates a JWT token.
+ * 
+ * @param {Object} params - The login details.
+ * @param {string} params.email - The user's email address.
+ * @param {string} params.password - The user's password.
+ * @returns {Promise<Object>} A promise that resolves to a token object on successful authentication, or an error object if credentials are invalid.
+ * @throws {Error} If there is a server error during the operation.
+ */
 exports.loginUserService = async ({ email, password }) => {
     try {
         let user = await User.findOne({ email });

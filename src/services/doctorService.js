@@ -1,7 +1,12 @@
 const User = require("../models/User");
 const Appointment = require("../models/Appointment");
 
-// Service for retrieving all doctors in the database
+/**
+ * Retrieves all doctors from the database, excluding their password for security.
+ * 
+ * @returns {Promise<Array>} A promise that resolves to an array of doctor objects without password fields.
+ * @throws {Error} If there is a database error during the fetch.
+ */
 exports.getAllDoctorsService = async () => {
     try {
         return await User.find({
@@ -12,7 +17,14 @@ exports.getAllDoctorsService = async () => {
     }
 };
 
-// Service for retrieving a list of patients assigned to a specified doctor
+/**
+ * Retrieves a list of patients assigned to a specified doctor based on appointments.
+ * 
+ * @param {Object} params - Parameters for retrieving patients.
+ * @param {string} params.doctorId - The ID of the doctor whose patients are being retrieved.
+ * @returns {Promise<Array>} A promise that resolves to an array of patient objects with patient details.
+ * @throws {Error} If no patients are found or if there is an error during the database query.
+ */
 exports.getPatientsByDoctorService = async ({ doctorId }) => {
     try {
         // console.log(doctorId);

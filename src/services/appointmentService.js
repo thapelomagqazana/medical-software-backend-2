@@ -1,5 +1,11 @@
 const Appointment = require("../models/Appointment");
 
+/**
+ * Retrieves all appointments from the database with doctor details.
+ * 
+ * @returns {Promise<Array>} A promise that resolves to an array of all appointments with populated doctor details.
+ * @throws {Error} If there is a database error during the fetch.
+ */
 exports.getAllAppointmentsService = async () => {
     try {
         return await Appointment.find().populate('doctorId', 'firstName lastName');
@@ -8,6 +14,13 @@ exports.getAllAppointmentsService = async () => {
     }
 };
 
+/**
+ * Retrieves a specific appointment by its ID with doctor details.
+ * 
+ * @param {string} id - The ID of the appointment to retrieve.
+ * @returns {Promise<Object>} A promise that resolves to the appointment object with populated doctor details.
+ * @throws {Error} If the appointment is not found or there is a database error.
+ */
 exports.getAppointmentByIdService = async (id) => {
     try {
         const appointment = await Appointment.findById(id).populate('doctorId', 'firstName lastName');
@@ -20,6 +33,17 @@ exports.getAppointmentByIdService = async (id) => {
     }
 };
 
+/**
+ * Creates a new appointment ensuring no overlapping with existing appointments for both doctor and patient.
+ * 
+ * @param {Object} params - The appointment details.
+ * @param {string} params.patientId - The ID of the patient.
+ * @param {string} params.doctorId - The ID of the doctor.
+ * @param {Date} params.startTime - The start time of the appointment.
+ * @param {Date} params.endTime - The end time of the appointment.
+ * @returns {Promise<Object>} A promise that resolves to the newly created appointment object.
+ * @throws {Error} If there is a scheduling conflict or a database error.
+ */
 exports.createAppointmentService = async ({ patientId, doctorId, startTime, endTime }) => {
     try {
 
@@ -62,6 +86,14 @@ exports.createAppointmentService = async ({ patientId, doctorId, startTime, endT
     }
 };
 
+/**
+ * Updates an existing appointment, checking for scheduling conflicts before saving.
+ * 
+ * @param {string} id - The ID of the appointment to update.
+ * @param {Object} updateData - Updated appointment details.
+ * @returns {Promise<Object>} A promise that resolves to the updated appointment object.
+ * @throws {Error} If the appointment does not exist, there is a scheduling conflict, or a database error occurs.
+ */
 exports.updateAppointmentService = async (id, { patientId, doctorId, startTime, endTime, status }) => {
     try {
         let appointment = await Appointment.findById(id);
@@ -111,6 +143,13 @@ exports.updateAppointmentService = async (id, { patientId, doctorId, startTime, 
     }
 };
 
+/**
+ * Deletes an appointment by its ID.
+ * 
+ * @param {string} id - The ID of the appointment to delete.
+ * @returns {Promise<Object>} A promise that resolves to a confirmation of deletion.
+ * @throws {Error} If the appointment is not found or there is a database error.
+ */
 exports.deleteAppointmentService = async (id) => {
     try {
         const appointment = await Appointment.findById(id);
@@ -124,6 +163,13 @@ exports.deleteAppointmentService = async (id) => {
     }
 };
 
+/**
+ * Retrieves all upcoming appointments for a specified patient.
+ * 
+ * @param {string} id - The patient ID.
+ * @returns {Promise<Array>} A promise that resolves to an array of upcoming appointments.
+ * @throws {Error} If there is a database error.
+ */
 exports.getUpcomingAppointmentsByPatientService = async (id) => {
     try {
         const upcomingAppointments = await Appointment.find({
@@ -141,6 +187,13 @@ exports.getUpcomingAppointmentsByPatientService = async (id) => {
     }
 };
 
+/**
+ * Retrieves all appointments for a specified patient.
+ * 
+ * @param {string} id - The patient ID.
+ * @returns {Promise<Array>} A promise that resolves to an array of appointments.
+ * @throws {Error} If there is a database error.
+ */
 exports.getAllAppointmentsByPatientService = async (id) => {
     try {
         const appointments = await Appointment.find({
