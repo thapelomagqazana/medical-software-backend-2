@@ -19,65 +19,22 @@ describe("Appointment API Tests", () => {
             useUnifiedTopology: true,
         });
 
-        // Register and login user
-        await request(app)
-            .post('/api/auth/register')
-            .send({
-                email: 'testuser@example.com',
-                password: 'password',
-                confirmPassword: 'password',
-                role: 'patient',
-                firstName: 'Test',
-                lastName: 'User',
-            });
-        const userLoginResponse = await request(app)
-            .post('/api/auth/login')
-            .send({
-                email: 'testuser@example.com',
-                password: 'password',
-            });
-        const user = await User.findOne({ email: 'testuser@example.com' });
-        userId = user.id;
-        userAuthToken = userLoginResponse.body.token;
-
-        // Register and login doctor
-        await request(app)
-            .post('/api/auth/register')
-            .send({
-                email: 'testdoctor@example.com',
-                password: 'password1',
-                confirmPassword: 'password1',
-                role: 'doctor',
-                firstName: 'Doctor',
-                lastName: 'User',
-            });
-        const doctorLoginResponse = await request(app)
-            .post('/api/auth/login')
-            .send({
-                email: 'testdoctor@example.com',
-                password: 'password1',
-            });
-        const doctor = await User.findOne({ email: 'testdoctor@example.com' });
-        doctorId = doctor.id;
-        doctorAuthToken = doctorLoginResponse.body.token;
+        // Register and log in users
+        userId = await registerUser('testuser@example.com', 'patient', 'password');
+        userAuthToken = await loginUser('testuser@example.com', 'password');
+        
+        doctorId = await registerUser('testdoctor@example.com', 'doctor', 'password1');
+        doctorAuthToken = await loginUser('testdoctor@example.com', 'password1');
 
         // Create a sample appointment
-        const newAppointment = {
-            patientId: userId,
-            doctorId: doctorId,
-            startTime: new Date(new Date().getTime() + 30 * 60 * 1000),
-            endTime: new Date(new Date().getTime() + 60 * 60 * 1000), // 1 hour later
-        };
-        const appointmentResponse = await request(app)
-            .post('/api/appointments')
-            .send(newAppointment)
-            .set('Authorization', userAuthToken);
-        appointmentId = appointmentResponse.body._id;
+        appointmentId = await createAppointment(userId, doctorId);
     });
 
     afterAll(async () => {
-        // Disconnect MongoDB connection
-        await Appointment.deleteMany({});
+        await Promise.all([
+            Appointment.deleteMany({}),
+            User.deleteMany({})
+        ]);
         await mongoose.disconnect();
     });
 
@@ -142,8 +99,8 @@ describe("Appointment API Tests", () => {
         const newAppointment = {
             patientId: userId,
             doctorId: doctorId,
-            startTime: new Date('2024-07-15T09:00:00Z'),
-            endTime: new Date('2024-07-15T10:00:00Z'),
+            startTime: new Date('2024-07-10T09:00:00Z'),
+            endTime: new Date('2024-07-10T10:00:00Z'),
         };
         const res = await request(app)
             .post('/api/appointments')
@@ -159,8 +116,8 @@ describe("Appointment API Tests", () => {
         const newAppointmentData = {
             patientId: userId,
             doctorId: doctorId,
-            startTime: new Date('2024-07-15T09:30:00Z'),
-            endTime: new Date('2024-07-15T10:30:00Z'),
+            startTime: new Date('2024-07-10T09:00:00Z'),
+            endTime: new Date('2024-07-10T10:00:00Z'),
         };
 
         const res = await request(app)
@@ -355,5 +312,35 @@ describe("Appointment API Tests", () => {
         expect(res.status).toBe(404);
         expect(res.body).toHaveProperty('msg', 'Appointment not found');
     });
+
+    // Helper functions
+    async function registerUser(email, role, password) {
+        await request(app)
+            .post('/api/auth/register')
+            .send({ email, password, confirmPassword: password, role, firstName: role, lastName: 'User' });
+
+        const user = await User.findOne({ email });
+        return user.id;
+    }
+
+    async function loginUser(email, password) {
+        const res = await request(app)
+            .post('/api/auth/login')
+            .send({ email, password });
+        return res.body.token;
+    }
+
+    async function createAppointment(patientId, doctorId) {
+        const res = await request(app)
+            .post('/api/appointments')
+            .set('Authorization', userAuthToken)
+            .send({
+                patientId,
+                doctorId,
+                startTime: new Date(new Date().getTime() + 30 * 60 * 1000),
+                endTime: new Date(new Date().getTime() + 60 * 60 * 1000)
+            });
+        return res.body._id;
+    }
 
 });

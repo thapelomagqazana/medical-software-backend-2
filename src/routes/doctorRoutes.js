@@ -11,4 +11,11 @@ const doctorController = require("../controllers/doctorController");
  */
 router.get("/", authMiddleware, doctorController.getAllDoctors);
 
+/**
+ * @route   GET /api/doctors/patients
+ * @desc    Retrieve patients for a doctor
+ * @access  Public
+ */
+router.get("/patients", authMiddleware, doctorController.getAssignedPatients);
+
 module.exports = router;

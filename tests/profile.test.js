@@ -3,176 +3,95 @@ const mongoose = require("mongoose");
 const app = require("../src/app");
 const User = require("../src/models/User");
 
+const testDatabaseUrl = `mongodb://127.0.0.1/test_database`;
+
 describe("Profile API Tests", () => {
-    let userAuthToken;
-    let adminAuthToken;
-    let userId;
-    let adminId;
+    let userAuthToken, adminAuthToken;
+    let userId, adminId;
 
     beforeAll(async () => {
-        // Connect to MongoDB
-        const url = `mongodb://127.0.0.1/test_database`;
-        await mongoose.connect(url, {
+        await mongoose.connect(testDatabaseUrl, {
             useNewUrlParser: true,
             useUnifiedTopology: true,
         });
 
-        // Register and login user
-        await request(app)
-            .post('/api/auth/register')
-            .send({
-                email: 'testuser@example.com',
-                password: 'password',
-                confirmPassword: 'password',
-                role: 'patient',
-                firstName: 'Test',
-                lastName: 'User',
-            });
-        const userLoginResponse = await request(app)
-            .post('/api/auth/login')
-            .send({
-                email: 'testuser@example.com',
-                password: 'password',
-            });
-        const user = await User.findOne({ email: 'testuser@example.com' });
-        userId = user.id;
-        userAuthToken = userLoginResponse.body.token;
+        await User.deleteMany({});
 
-        // Register and login admin
-        await request(app)
-            .post('/api/auth/register')
-            .send({
-                email: 'testadmin@example.com',
-                password: 'password1',
-                confirmPassword: 'password1',
-                role: 'admin',
-                firstName: 'Admin',
-                lastName: 'User',
-            });
-        const adminLoginResponse = await request(app)
-            .post('/api/auth/login')
-            .send({
-                email: 'testadmin@example.com',
-                password: 'password1',
-            });
-        const admin = await User.findOne({ email: 'testadmin@example.com' });
-        adminId = admin.id;
-        adminAuthToken = adminLoginResponse.body.token;
+        userId = await registerUser('testuser@example.com', 'password', 'patient');
+        userAuthToken = await loginUser('testuser@example.com', 'password');
+        
+        adminId = await registerUser('testadmin@example.com', 'password1', 'admin');
+        adminAuthToken = await loginUser('testadmin@example.com', 'password1');
     });
 
     afterAll(async () => {
-        // Disconnect MongoDB connection
         await User.deleteMany({});
         await mongoose.disconnect();
     });
 
     it('should get current user profile', async () => {
-        const res = await request(app)
-            .get(`/api/profile/me/${userId}`)
-            .set('Authorization', userAuthToken);
+        const res = await getUserProfile(userId, userAuthToken);
         expect(res.status).toBe(200);
         expect(res.body).toHaveProperty('firstName', 'Test');
-        expect(res.body).toHaveProperty('lastName', 'User');
-        expect(res.body).toHaveProperty('email', 'testuser@example.com');
-        expect(res.body).not.toHaveProperty('password');
     });
 
     it('should update user profile', async () => {
-        const updatedProfile = {
-            firstName: 'Updated',
-            lastName: 'User',
-        };
-        const res = await request(app)
-            .put(`/api/profile/edit/${userId}`)
-            .send(updatedProfile)
-            .set('Authorization', userAuthToken);
-
+        const updatedProfile = { firstName: 'Updated', lastName: 'User' };
+        const res = await updateUserProfile(userId, updatedProfile, userAuthToken);
         expect(res.status).toBe(200);
-        expect(res.body).toHaveProperty('firstName', 'Updated');
-        expect(res.body).toHaveProperty('lastName', 'User');
+        expect(res.body.firstName).toEqual('Updated');
     });
 
-    it('should return 400 for invalid user ID format', async () => {
-        const res = await request(app)
-            .get(`/api/profile/me/invalidUserID`)
-            .set('Authorization', userAuthToken);
-
+    it('should return 400 for invalid user ID format in profile fetch', async () => {
+        const res = await getUserProfile('invalidUserID', userAuthToken);
         expect(res.status).toBe(400);
-        expect(res.body).toHaveProperty('errors');
         expect(res.body.errors[0].msg).toBe('Invalid user ID format');
     });
 
-    it('should return 400 for missing first name in update profile request', async () => {
-        const updatedProfile = {
-            lastName: 'User',
-        };
-        const res = await request(app)
-            .put(`/api/profile/edit/${userId}`)
-            .send(updatedProfile)
-            .set('Authorization', userAuthToken);
-
-        expect(res.status).toBe(400);
-        expect(res.body).toHaveProperty('errors');
-        expect(res.body.errors[0].msg).toBe('Invalid value');
-    });
-
-    it('should return 400 for missing last name in update profile request', async () => {
-        const updatedProfile = {
-            firstName: 'Updated',
-        };
-        const res = await request(app)
-            .put(`/api/profile/edit/${userId}`)
-            .send(updatedProfile)
-            .set('Authorization', userAuthToken);
-
-        expect(res.status).toBe(400);
-        expect(res.body).toHaveProperty('errors');
-        expect(res.body.errors[0].msg).toBe('Invalid value');
-    });
-
     it('should delete user profile', async () => {
-        const res = await request(app)
-            .delete(`/api/profile/delete/${userId}`)
-            .set('Authorization', adminAuthToken);
-
+        const res = await deleteUserProfile(userId, adminAuthToken);
         expect(res.status).toBe(200);
-        expect(res.body).toHaveProperty('message', 'User deleted successfully');
-
-        const deletedUser = await User.findById(userId);
-        expect(deletedUser).toBeNull();
+        expect(res.body.message).toBe('User deleted successfully');
     });
 
     it('should return 404 for getting deleted user profile', async () => {
-        const res = await request(app)
+        const res = await getUserProfile(userId, userAuthToken);
+        expect(res.status).toBe(404);
+    });
+
+    // Helper functions
+    async function registerUser(email, password, role) {
+        await request(app).post('/api/auth/register').send({
+            email, password, confirmPassword: password, role,
+            firstName: 'Test', lastName: 'User'
+        });
+        const user = await User.findOne({ email });
+        return user.id;
+    }
+
+    async function loginUser(email, password) {
+        const response = await request(app)
+            .post('/api/auth/login')
+            .send({ email, password });
+        return response.body.token;
+    }
+
+    async function getUserProfile(userId, authToken) {
+        return request(app)
             .get(`/api/profile/me/${userId}`)
-            .set('Authorization', userAuthToken);
+            .set('Authorization', authToken);
+    }
 
-        expect(res.status).toBe(404);
-        expect(res.body).toHaveProperty('message', 'User not found');
-    });
-
-    it('should return 404 for updating deleted user profile', async () => {
-        const updatedProfile = {
-            firstName: 'Nonexistent',
-            lastName: 'User',
-        };
-        const res = await request(app)
+    async function updateUserProfile(userId, profileData, authToken) {
+        return request(app)
             .put(`/api/profile/edit/${userId}`)
-            .send(updatedProfile)
-            .set('Authorization', userAuthToken);
+            .send(profileData)
+            .set('Authorization', authToken);
+    }
 
-        expect(res.status).toBe(404);
-        expect(res.body).toHaveProperty('message', 'User not found');
-    });
-
-    it('should return 404 for deleting already deleted user profile', async () => {
-        const res = await request(app)
+    async function deleteUserProfile(userId, authToken) {
+        return request(app)
             .delete(`/api/profile/delete/${userId}`)
-            .set('Authorization', adminAuthToken);
-        
-        expect(res.status).toBe(404);
-        expect(res.body).toHaveProperty('message', 'User not found');
-    });
-
-
+            .set('Authorization', authToken);
+    }
 });

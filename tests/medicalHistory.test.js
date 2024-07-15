@@ -21,35 +21,9 @@ describe("Medical History Tracking API Tests", () => {
         await User.deleteMany({});
         await MedicalHistory.deleteMany({});
 
-        // Register and login user
-        await request(app)
-            .post('/api/auth/register')
-            .send({
-                email: 'testuser@example.com',
-                password: 'password',
-                confirmPassword: 'password',
-                role: 'patient',
-                firstName: 'Test',
-                lastName: 'User',
-            });
-        const userLoginResponse = await request(app)
-            .post('/api/auth/login')
-            .send({
-                email: 'testuser@example.com',
-                password: 'password',
-            });
-        const user = await User.findOne({ email: 'testuser@example.com' });
-        userId = user.id;
-        userAuthToken = userLoginResponse.body.token;
-
-        // Create a test medical record
-        const newRecord = new MedicalHistory({
-            userId,
-            condition: 'Hypertension',
-            diagnosisDate: new Date(),
-        });
-        const savedRecord = await newRecord.save();
-        recordId = savedRecord._id;
+        userId = await registerUser('testuser@example.com', 'password');
+        userAuthToken = await loginUser('testuser@example.com', 'password');
+        recordId = await createMedicalRecord(userId, 'Hypertension');
     });
 
     afterAll(async () => {
@@ -166,4 +140,26 @@ describe("Medical History Tracking API Tests", () => {
         expect(res.status).toBe(404);
         expect(res.body.message).toBe('Medical record not found');
     });
+
+    // Helper functions
+    async function registerUser(email, password) {
+        await request(app)
+            .post('/api/auth/register')
+            .send({ email, password, confirmPassword: password, role: 'patient', firstName: 'Test', lastName: 'User' });
+        const user = await User.findOne({ email });
+        return user.id;
+    }
+
+    async function loginUser(email, password) {
+        const response = await request(app)
+            .post('/api/auth/login')
+            .send({ email, password });
+        return response.body.token;
+    }
+
+    async function createMedicalRecord(userId, condition) {
+        const record = new MedicalHistory({ userId, condition, diagnosisDate: new Date() });
+        const savedRecord = await record.save();
+        return savedRecord._id;
+    }
 });
