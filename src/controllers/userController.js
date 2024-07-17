@@ -1,4 +1,9 @@
-const { getUserByIdService, updateUserProfileService, deleteUserProfileService } = require("../services/userService");
+const { 
+    getUserByIdService, 
+    updateUserProfileService, 
+    deleteUserProfileService, 
+    updateProfilePictureService } = require("../services/userService");
+const fileStorageService = require("../services/fileStorageService");
 const { validationResult } = require("express-validator");
 
 /**
@@ -75,5 +80,20 @@ exports.deleteProfile = async (req, res) => {
         } else {
           res.status(500).json({ message: 'Server Error' });
         }
+    }
+};
+
+exports.uploadProfilePicture = fileStorageService.single("picture"), async (req, res) => {
+    try {
+        console.log(req.file);
+        if (!req.file) {
+            return res.status(400).send({ msg: "No file uploaded" });
+        }
+
+        const patient = await updateProfilePictureService(req.user.id, req.file.path);
+        res.status(200).json(patient);
+    } catch (error) {
+        console.error(error.message);
+        res.status(500).json({ msg: error.message });
     }
 };

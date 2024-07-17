@@ -23,7 +23,9 @@ const app = express();
  * @function
  * @memberof module:App
  */
-app.use(express.json({ extended: false }));
+// app.use(express.json({ extended: false }));
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 // Middleware
 app.use(bodyParser.json());
@@ -35,11 +37,16 @@ app.use(morgan("dev"));
 
 // Define Routes
 app.use("/api/auth", authRoutes);
-app.use("/api/profile", profileRoutes); // New profile routes
+app.use("/api/profile", profileRoutes); 
 app.use("/api/medical-history", medicalHistoryRoutes);
 app.use("/api/appointments", appointmentRoutes);
 app.use("/api/patient", patientRoutes);
 app.use("/api/doctors", doctorRoutes);
+
+// Catch unhandled routes
+// app.all('*', (req, res) => {
+//     res.status(404).send(`Cannot find ${req.originalUrl} on this server!`);
+// });
 
 /**
  * @description Default route to check if the API is running.

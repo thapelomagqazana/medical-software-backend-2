@@ -58,8 +58,25 @@ const deleteUserProfileService = async (userId) => {
     }
 };
 
+const updateProfilePictureService = async (patientId, filePath) => {
+    try {
+        const patient = await User.findById(patientId);
+        console.log(patient);
+        if (!patient) {
+            throw new Error("Patient not found");
+        }
+
+        patient.profilePicture = filePath; // Update the profile picture path
+        await patient.save();
+        return patient;
+    } catch (error) {
+        throw new Error("Failed to update profile picture: " + error.message);
+    }
+};
+
 module.exports = {
     getUserByIdService,
     updateUserProfileService,
     deleteUserProfileService,
+    updateProfilePictureService
 };

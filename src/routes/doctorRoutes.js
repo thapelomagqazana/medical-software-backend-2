@@ -3,6 +3,7 @@ const router = express.Router();
 const authMiddleware = require("../middleware/authMiddleware");
 const { grantAccess } = require('../middleware/rbacMiddleware');
 const doctorController = require("../controllers/doctorController");
+const appointmentController = require("../controllers/appointmentController")
 
 /**
  * Retrieves a list of all doctors from the system.
@@ -23,5 +24,8 @@ router.get("/", authMiddleware, doctorController.getAllDoctors);
  * @access Public (requires authentication due to middleware)
  */
 router.get("/patients", authMiddleware, doctorController.getAssignedPatients);
+
+// Route to get appointments for a doctor
+router.get('/appointments', authMiddleware, appointmentController.getDoctorAppointments);
 
 module.exports = router;

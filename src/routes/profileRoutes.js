@@ -34,6 +34,8 @@ router.put('/edit/:userId', [
     body('lastName').notEmpty().isString(), 
 ], authMiddleware, grantAccess("updateProfile"), profileController.updateProfile);
 
+router.post('/picture', authMiddleware, profileController.uploadProfilePicture);
+
 /**
  * Deletes a user profile by their ID. This operation is restricted and typically requires administrative privileges.
  *

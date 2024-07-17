@@ -6,6 +6,7 @@ const {
     deleteAppointmentService,
     getUpcomingAppointmentsByPatientService,
     getAllAppointmentsByPatientService,
+    getAppointmentsForDoctor,
 
 } = require ("../services/appointmentService");
 
@@ -162,5 +163,21 @@ exports.getAllAppointmentsByPatient = async (req, res) => {
   } catch (error) {
     console.error(error.message);
     res.status(500).send("Server Error");
+  }
+};
+
+/**
+ * Controller to retrieve appointments assigned to the logged-in doctor.
+ * @param {Object} req - The request object, assuming doctorId is available in req.user.id.
+ * @param {Object} res - The response object.
+ */
+exports.getDoctorAppointments = async (req, res) => {
+  try {
+    const doctorId = req.user.id;
+    const appointments = await getAppointmentsForDoctor(doctorId);
+    res.json(appointments);
+  } catch (error) {
+    console.error(error.message);
+    res.status(500).json({ msg: error.message });
   }
 };

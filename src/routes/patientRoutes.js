@@ -3,6 +3,7 @@ const router = express.Router();
 const authMiddleware = require("../middleware/authMiddleware");
 const { grantAccess } = require('../middleware/rbacMiddleware');
 const appointmentController = require("../controllers/appointmentController");
+const { viewPrescriptions } = require("../controllers/patientController");
 
 /**
  * Retrieves all upcoming appointments for the currently authenticated patient.
@@ -27,5 +28,8 @@ router.get("/appointments",
     authMiddleware,  // Middleware to verify the user's token and populate req.user
     appointmentController.getAllAppointmentsByPatient  // Controller action to retrieve all appointments
 );
+
+// GET /api/patient/:patientId/prescriptions
+router.get("/:patientId/prescriptions", authMiddleware, viewPrescriptions);
 
 module.exports = router;

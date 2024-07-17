@@ -19,8 +19,11 @@ const authMiddleware = (req, res, next) => {
     }
 
     try {
+        // Replace the "Bearer " prefix and trim any extra space
+        const cleanToken = token.replace("Bearer ", "").trim();
+
         // Verify token
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const decoded = jwt.verify(cleanToken, process.env.JWT_SECRET);
 
         // Attach user from token payload to request object
         req.user = decoded.user;

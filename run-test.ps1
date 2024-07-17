@@ -5,7 +5,8 @@ $testFiles = @(
     "tests/medicalHistory.test.js",
     "tests/appointment.test.js",
     "tests/doctor.test.js",
-    "tests/doctor2.test.js"
+    "tests/doctor2.test.js",
+    "tests/prescription.test.js"
 )
 
 # Loop through each test file

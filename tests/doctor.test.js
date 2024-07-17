@@ -58,7 +58,7 @@ describe('Doctor API Tests', () => {
         // Make a request to fetch doctors
         const res = await request(app)
             .get('/api/doctors')
-            .set('Authorization', userAuthToken);
+            .set('Authorization', `Bearer ${userAuthToken}`);
 
         expect(res.status).toBe(200);
         expect(res.body).toHaveLength(2);

@@ -208,3 +208,17 @@ exports.getAllAppointmentsByPatientService = async (id) => {
         throw new Error(error.message);
     }
 };
+
+/**
+ * Retrieves all appointments for a specific doctor.
+ * @param {string} doctorId - ID of the doctor whose appointments are to be retrieved.
+ * @returns {Promise<Array>} - A promise that resolves to an array of appointments.
+ */
+exports.getAppointmentsForDoctor = async (doctorId) => {
+    try {
+        const appointments = await Appointment.find({ doctorId }).populate("patientId");
+        return appointments;
+    } catch (error) {
+        throw new Error("Failed to retrieve appointments: " + error.message);
+    }
+};

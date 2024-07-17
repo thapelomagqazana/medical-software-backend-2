@@ -36,7 +36,7 @@ describe("Medical History Tracking API Tests", () => {
     it('should get medical history for a user', async () => {
         const res = await request(app)
             .get(`/api/medical-history/${userId}`)
-            .set('Authorization', userAuthToken);
+            .set('Authorization', `Bearer ${userAuthToken}`);
         expect(res.status).toBe(200);
         expect(res.body).toBeInstanceOf(Array);
         expect(res.body.length).toBe(1);
@@ -51,7 +51,7 @@ describe("Medical History Tracking API Tests", () => {
         const res = await request(app)
             .post(`/api/medical-history/${userId}`)
             .send(newRecordData)
-            .set('Authorization', userAuthToken);
+            .set('Authorization', `Bearer ${userAuthToken}`);
         expect(res.status).toBe(201);
         expect(res.body).toHaveProperty('_id');
         expect(res.body.condition).toBe('Diabetes');
@@ -64,7 +64,7 @@ describe("Medical History Tracking API Tests", () => {
         const res = await request(app)
             .put(`/api/medical-history/${recordId}`)
             .send(updatedRecordData)
-            .set('Authorization', userAuthToken);
+            .set('Authorization', `Bearer ${userAuthToken}`);
         expect(res.status).toBe(200);
         expect(res.body.condition).toBe('Updated Condition');
     });
@@ -72,7 +72,7 @@ describe("Medical History Tracking API Tests", () => {
     it('should delete an existing medical record', async () => {
         const res = await request(app)
             .delete(`/api/medical-history/${recordId}`)
-            .set('Authorization', userAuthToken);
+            .set('Authorization', `Bearer ${userAuthToken}`);
         expect(res.status).toBe(200);
         expect(res.body.message).toBe('Medical record deleted successfully');
 
@@ -83,7 +83,7 @@ describe("Medical History Tracking API Tests", () => {
     it('should handle invalid user ID format for GET', async () => {
         const res = await request(app)
             .get('/api/medical-history/invalidUserId')
-            .set('Authorization', userAuthToken);
+            .set('Authorization', `Bearer ${userAuthToken}`);
         expect(res.status).toBe(400);
         expect(res.body.errors[0].msg).toBe('Invalid user ID format');
     });
@@ -96,7 +96,7 @@ describe("Medical History Tracking API Tests", () => {
         const res = await request(app)
             .post('/api/medical-history/invalidUserId')
             .send(newRecordData)
-            .set('Authorization', userAuthToken);
+            .set('Authorization', `Bearer ${userAuthToken}`);
         expect(res.status).toBe(400);
         expect(res.body.errors[0].msg).toBe('Invalid user ID format');
     });
@@ -108,7 +108,7 @@ describe("Medical History Tracking API Tests", () => {
         const res = await request(app)
             .put('/api/medical-history/invalidRecordId')
             .send(updatedRecordData)
-            .set('Authorization', userAuthToken);
+            .set('Authorization', `Bearer ${userAuthToken}`);
         expect(res.status).toBe(400);
         expect(res.body.errors[0].msg).toBe('Invalid record ID format');
     });
@@ -116,7 +116,7 @@ describe("Medical History Tracking API Tests", () => {
     it('should handle invalid record ID format for DELETE', async () => {
         const res = await request(app)
             .delete('/api/medical-history/invalidRecordId')
-            .set('Authorization', userAuthToken);
+            .set('Authorization', `Bearer ${userAuthToken}`);
         expect(res.status).toBe(400);
         expect(res.body.errors[0].msg).toBe('Invalid record ID format');
     });
@@ -128,7 +128,7 @@ describe("Medical History Tracking API Tests", () => {
         const res = await request(app)
             .put(`/api/medical-history/${new mongoose.Types.ObjectId()}`)
             .send(updatedRecordData)
-            .set('Authorization', userAuthToken);
+            .set('Authorization', `Bearer ${userAuthToken}`);
         expect(res.status).toBe(404);
         expect(res.body.message).toBe('Medical record not found');
     });
@@ -136,7 +136,7 @@ describe("Medical History Tracking API Tests", () => {
     it('should handle medical record not found error for DELETE', async () => {
         const res = await request(app)
             .delete(`/api/medical-history/${new mongoose.Types.ObjectId()}`)
-            .set('Authorization', userAuthToken);
+            .set('Authorization', `Bearer ${userAuthToken}`);
         expect(res.status).toBe(404);
         expect(res.body.message).toBe('Medical record not found');
     });

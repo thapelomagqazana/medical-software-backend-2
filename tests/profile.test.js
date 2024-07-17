@@ -2,6 +2,7 @@ const request = require("supertest");
 const mongoose = require("mongoose");
 const app = require("../src/app");
 const User = require("../src/models/User");
+const path = require('path');
 
 const testDatabaseUrl = `mongodb://127.0.0.1/test_database`;
 
@@ -42,6 +43,17 @@ describe("Profile API Tests", () => {
         expect(res.body.firstName).toEqual('Updated');
     });
 
+    // it('should upload a profile picture and update patient profile', async () => {
+    //     const res = await request(app)
+    //         .post('/api/profile/picture')
+    //         .set('Authorization', userAuthToken) // Assuming validToken is set correctly
+    //         .attach('picture', path.resolve(__dirname, 'testPic.jpg'));
+    //     console.log(res);
+    //     expect(res.status).toBe(200);
+    //     // expect(res.body).toHaveProperty('msg', 'Profile picture updated successfully');
+    //     // expect(res.body.data).toHaveProperty('profilePicture');
+    // });
+
     it('should return 400 for invalid user ID format in profile fetch', async () => {
         const res = await getUserProfile('invalidUserID', userAuthToken);
         expect(res.status).toBe(400);
@@ -58,6 +70,8 @@ describe("Profile API Tests", () => {
         const res = await getUserProfile(userId, userAuthToken);
         expect(res.status).toBe(404);
     });
+
+
 
     // Helper functions
     async function registerUser(email, password, role) {
@@ -79,19 +93,19 @@ describe("Profile API Tests", () => {
     async function getUserProfile(userId, authToken) {
         return request(app)
             .get(`/api/profile/me/${userId}`)
-            .set('Authorization', authToken);
+            .set('Authorization', `Bearer ${authToken}`);
     }
 
     async function updateUserProfile(userId, profileData, authToken) {
         return request(app)
             .put(`/api/profile/edit/${userId}`)
             .send(profileData)
-            .set('Authorization', authToken);
+            .set('Authorization', `Bearer ${authToken}`);
     }
 
     async function deleteUserProfile(userId, authToken) {
         return request(app)
             .delete(`/api/profile/delete/${userId}`)
-            .set('Authorization', authToken);
+            .set('Authorization', `Bearer ${authToken}`);
     }
 });

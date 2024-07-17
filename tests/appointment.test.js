@@ -41,7 +41,7 @@ describe("Appointment API Tests", () => {
     it('should fetch all appointments', async () => {
         const res = await request(app)
             .get('/api/appointments/all')
-            .set('Authorization', doctorAuthToken);
+            .set('Authorization', `Bearer ${doctorAuthToken}`);
         
         expect(res.status).toBe(200);
         expect(res.body).toBeInstanceOf(Array);
@@ -51,7 +51,7 @@ describe("Appointment API Tests", () => {
     it('should get upcoming appointments for the logged-in patient', async () => {
         const res = await request(app)
             .get('/api/patient/upcoming-appointments')
-            .set('Authorization', userAuthToken);
+            .set('Authorization',`Bearer ${userAuthToken}`);
 
         expect(res.status).toBe(200);
         expect(res.body).toHaveLength(1);
@@ -65,7 +65,7 @@ describe("Appointment API Tests", () => {
     it('should get all appointments for the logged-in patient', async () => {
         const res = await request(app)
             .get('/api/patient/appointments')
-            .set('Authorization', userAuthToken);
+            .set('Authorization',`Bearer ${userAuthToken}`);
 
         expect(res.status).toBe(200);
         expect(res.body).toHaveLength(1);
@@ -79,7 +79,7 @@ describe("Appointment API Tests", () => {
     it('should fetch a single appointment by ID', async () => {
         const res = await request(app)
             .get(`/api/appointments/${appointmentId}`)
-            .set('Authorization', userAuthToken);
+            .set('Authorization', `Bearer ${userAuthToken}`);
 
         expect(res.status).toBe(200);
         expect(res.body).toHaveProperty('_id', appointmentId);
@@ -89,7 +89,7 @@ describe("Appointment API Tests", () => {
         const nonExistentId = new mongoose.Types.ObjectId();
         const res = await request(app)
             .get(`/api/appointments/${nonExistentId}`)
-            .set('Authorization', userAuthToken);
+            .set('Authorization', `Bearer ${userAuthToken}`);
 
         expect(res.status).toBe(404);
         expect(res.body).toHaveProperty('msg', 'Appointment not found');
@@ -105,7 +105,7 @@ describe("Appointment API Tests", () => {
         const res = await request(app)
             .post('/api/appointments')
             .send(newAppointment)
-            .set('Authorization', userAuthToken);
+            .set('Authorization', `Bearer ${userAuthToken}`);
 
         expect(res.status).toBe(200);
         expect(res.body).toHaveProperty('patientId', userId);
@@ -123,7 +123,7 @@ describe("Appointment API Tests", () => {
         const res = await request(app)
             .post('/api/appointments')
             .send(newAppointmentData)
-            .set('Authorization', userAuthToken);
+            .set('Authorization', `Bearer ${userAuthToken}`);
 
         expect(res.status).toBe(403);
         expect(res.body).toHaveProperty('msg', 'Doctor is already booked during this time');
@@ -156,7 +156,7 @@ describe("Appointment API Tests", () => {
         const res = await request(app)
             .put(`/api/appointments/${appointmentId}`)
             .send(updatedAppointment)
-            .set('Authorization', doctorAuthToken);
+            .set('Authorization', `Bearer ${doctorAuthToken}`);
 
         expect(res.status).toBe(200);
         expect(res.body).toHaveProperty('_id', appointmentId);
@@ -167,7 +167,7 @@ describe("Appointment API Tests", () => {
     it('should delete an appointment', async () => {
         const res = await request(app)
             .delete(`/api/appointments/${appointmentId}`)
-            .set('Authorization', doctorAuthToken);
+            .set('Authorization', `Bearer ${doctorAuthToken}`);
 
         expect(res.status).toBe(200);
         expect(res.body).toHaveProperty('msg', 'Appointment removed');
@@ -180,7 +180,7 @@ describe("Appointment API Tests", () => {
         const nonExistentId = new mongoose.Types.ObjectId();
         const res = await request(app)
             .delete(`/api/appointments/${nonExistentId}`)
-            .set('Authorization', doctorAuthToken);
+            .set('Authorization', `Bearer ${doctorAuthToken}`);
 
         expect(res.status).toBe(404);
         expect(res.body).toHaveProperty('msg', 'Appointment not found');
@@ -189,7 +189,7 @@ describe("Appointment API Tests", () => {
     it('should return 400 for invalid appointment ID format', async () => {
         const res = await request(app)
             .get(`/api/appointments/invalidAppointmentID`)
-            .set('Authorization', doctorAuthToken);
+            .set('Authorization', `Bearer ${doctorAuthToken}`);
 
         expect(res.status).toBe(400);
         expect(res.body).toHaveProperty('errors');
@@ -205,7 +205,7 @@ describe("Appointment API Tests", () => {
         const res = await request(app)
             .post('/api/appointments')
             .send(newAppointment)
-            .set('Authorization', doctorAuthToken);
+            .set('Authorization', `Bearer ${doctorAuthToken}`);
 
         expect(res.status).toBe(400);
         expect(res.body).toHaveProperty('errors');
@@ -221,7 +221,7 @@ describe("Appointment API Tests", () => {
         const res = await request(app)
             .post('/api/appointments')
             .send(newAppointment)
-            .set('Authorization', doctorAuthToken);
+            .set('Authorization', `Bearer ${doctorAuthToken}`);
 
         expect(res.status).toBe(400);
         expect(res.body).toHaveProperty('errors');
@@ -237,7 +237,7 @@ describe("Appointment API Tests", () => {
         const res = await request(app)
             .post('/api/appointments')
             .send(newAppointment)
-            .set('Authorization', doctorAuthToken);
+            .set('Authorization', `Bearer ${doctorAuthToken}`);
 
         expect(res.status).toBe(400);
         expect(res.body).toHaveProperty('errors');
@@ -253,7 +253,7 @@ describe("Appointment API Tests", () => {
         const res = await request(app)
             .post('/api/appointments')
             .send(newAppointment)
-            .set('Authorization', doctorAuthToken);
+            .set('Authorization', `Bearer ${doctorAuthToken}`);
 
         expect(res.status).toBe(400);
         expect(res.body).toHaveProperty('errors');
@@ -267,7 +267,7 @@ describe("Appointment API Tests", () => {
         const res = await request(app)
             .put(`/api/appointments/${appointmentId}`)
             .send(updatedAppointment)
-            .set('Authorization', doctorAuthToken);
+            .set('Authorization', `Bearer ${doctorAuthToken}`);
 
         expect(res.status).toBe(400);
         expect(res.body).toHaveProperty('errors');
@@ -281,7 +281,7 @@ describe("Appointment API Tests", () => {
         const res = await request(app)
             .put(`/api/appointments/${appointmentId}`)
             .send(updatedAppointment)
-            .set('Authorization', doctorAuthToken);
+            .set('Authorization', `Bearer ${doctorAuthToken}`);
 
         expect(res.status).toBe(400);
         expect(res.body).toHaveProperty('errors');
@@ -297,7 +297,7 @@ describe("Appointment API Tests", () => {
         const res = await request(app)
             .put(`/api/appointments/${nonExistentId}`)
             .send(updatedAppointment)
-            .set('Authorization', doctorAuthToken);
+            .set('Authorization', `Bearer ${doctorAuthToken}`);
 
         expect(res.status).toBe(404);
         expect(res.body).toHaveProperty('msg', 'Appointment not found');
@@ -307,7 +307,7 @@ describe("Appointment API Tests", () => {
         const nonExistentId = new mongoose.Types.ObjectId();
         const res = await request(app)
             .delete(`/api/appointments/${nonExistentId}`)
-            .set('Authorization', doctorAuthToken);
+            .set('Authorization', `Bearer ${doctorAuthToken}`);
 
         expect(res.status).toBe(404);
         expect(res.body).toHaveProperty('msg', 'Appointment not found');

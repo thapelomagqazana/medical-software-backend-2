@@ -48,12 +48,21 @@ describe('Doctor Patients API Tests', () => {
     it('should fetch patients assigned to the doctor', async () => {
         const res = await request(app)
             .get("/api/doctors/patients")
-            .set('Authorization', doctorAuthToken);
+            .set('Authorization', `Bearer ${doctorAuthToken}`);
 
         expect(res.status).toBe(200);
         expect(res.body).toHaveLength(2);
         expect(res.body[0]).toHaveProperty('firstName');
         expect(res.body[0]).toHaveProperty('lastName');
+    });
+
+    it('should retrieve appointments for the doctor', async () => {
+        const res = await request(app)
+            .get('/api/doctors/appointments')
+            .set('Authorization', `Bearer ${doctorAuthToken}`);
+        
+        expect(res.status).toBe(200);
+        expect(res.body).toBeInstanceOf(Array);
     });
 
     // Helper functions for clarity and reuse
