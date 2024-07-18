@@ -2,7 +2,8 @@ const express = require("express");
 const bodyParser = require("body-parser");
 const cors = require("cors");
 const morgan = require("morgan");
-const routes = require("./routes/routes");
+const patientRoutes = require("./routes/patientRoutes");
+const doctorRoutes = require("./routes/doctorRoutes");
 // const authRoutes = require("./routes/authRoutes");
 // const profileRoutes = require("./routes/profileRoutes");
 // const medicalHistoryRoutes = require("./routes/medicalHistoryRoutes");
@@ -37,7 +38,8 @@ app.use(morgan("dev"));
 
 
 // Define Routes
-app.use("/api/patients", routes);
+app.use("/api/patients", patientRoutes);
+app.use("/api/doctors", doctorRoutes);
 // app.use("/api/auth", authRoutes);
 // app.use("/api/profile", profileRoutes); 
 // app.use("/api/medical-history", medicalHistoryRoutes);
