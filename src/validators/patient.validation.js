@@ -14,6 +14,12 @@ const registerPatientValidationRules = [
     body('emergencyContacts.*.phone').notEmpty().withMessage('Emergency contact phone number is required'),
 ];
 
+const loginPatientValidationRules = [
+    body('email').isEmail().withMessage('Invalid email address'),
+    body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters long'),
+];
+
 module.exports = {
     registerPatientValidationRules,
+    loginPatientValidationRules
 };

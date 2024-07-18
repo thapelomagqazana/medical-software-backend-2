@@ -2,73 +2,76 @@ const request = require('supertest');
 const mongoose = require('mongoose');
 const app = require('../src/app');
 const Doctor = require('../src/models/doctor.model');
-const bcrypt = require("bcrypt");
+const bcrypt = require('bcrypt');
+
+const connectToDatabase = async () => {
+    const url = `mongodb://127.0.0.1/test_database`;
+    await mongoose.connect(url, {
+        useNewUrlParser: true,
+        useUnifiedTopology: true,
+    });
+};
+
+const clearDatabase = async () => {
+    await Doctor.deleteMany({});
+};
+
+const disconnectFromDatabase = async () => {
+    await mongoose.connection.db.dropDatabase();
+    await mongoose.connection.close();
+};
+
+const createDoctor = async (doctorData) => {
+    const doctor = new Doctor(doctorData);
+    await doctor.save();
+    return doctor;
+};
+
+const doctorData = {
+    firstName: 'Jane',
+    lastName: 'Smith',
+    email: 'jane.smith@example.com',
+    password: 'password123',
+    phone: '1234567890',
+    specialty: 'Cardiology',
+    licenseNumber: '12345',
+};
 
 describe('Doctor Registration', () => {
-    beforeAll(async () => {
-        // Connect to MongoDB
-        const url = `mongodb://127.0.0.1/test_database`;
-        await mongoose.connect(url, {
-            useNewUrlParser: true,
-            useUnifiedTopology: true,
-        });
-    });
+    beforeAll(connectToDatabase);
 
-    afterAll(async () => {
-        await mongoose.connection.db.dropDatabase();
-        await mongoose.connection.close();
-    });
+    afterAll(disconnectFromDatabase);
 
-    beforeEach(async () => {
-        await Doctor.deleteMany({});
-    });
+    beforeEach(clearDatabase);
 
-    it('should register a new doctor', async () => {
+    it('should register a new doctor and hash the password', async () => {
         const response = await request(app)
             .post('/api/doctors/register')
-            .send({
-                firstName: 'Jane',
-                lastName: "Smith",
-                email: 'jane.smith@example.com',
-                password: 'password123',
-                phone: '1234567890',
-                specialty: 'Cardiology',
-                licenseNumber: '12345',
-            })
+            .send(doctorData)
             .expect(201);
 
         expect(response.body).toHaveProperty('_id');
-        expect(response.body).toHaveProperty('firstName', 'Jane');
-        expect(response.body).toHaveProperty('lastName', 'Smith');
-        expect(response.body).toHaveProperty('email', 'jane.smith@example.com');
+        expect(response.body).toHaveProperty('firstName', doctorData.firstName);
+        expect(response.body).toHaveProperty('lastName', doctorData.lastName);
+        expect(response.body).toHaveProperty('email', doctorData.email);
 
-        const doctor = await Doctor.findOne({ email: 'jane.smith@example.com' });
+        const doctor = await Doctor.findOne({ email: doctorData.email });
         expect(doctor).not.toBeNull();
-        const isPasswordCorrect = await bcrypt.compare('password123', doctor.password);
+        const isPasswordCorrect = await bcrypt.compare(doctorData.password, doctor.password);
         expect(isPasswordCorrect).toBe(true);
     });
 
     it('should return 400 if email already exists', async () => {
-        await new Doctor({
-            firstName: 'Existing',
-            lastName: "Doctor",
+        await createDoctor({
+            ...doctorData,
             email: 'existing.email@example.com',
-            password: 'password123',
-            phone: '1234567890',
-            specialty: 'Cardiology',
-            licenseNumber: '12345',
-        }).save();
+        });
 
         const response = await request(app)
             .post('/api/doctors/register')
             .send({
-                firstName: 'New',
-                lastName: "User",
+                ...doctorData,
                 email: 'existing.email@example.com',
-                password: 'password123',
-                phone: '1234567890',
-                specialty: 'Cardiology',
-                licenseNumber: '123456',
             })
             .expect(400);
 
@@ -76,32 +79,21 @@ describe('Doctor Registration', () => {
     });
 
     it('should return 400 if license number already exists', async () => {
-        await new Doctor({
-            firstName: 'Existing',
-            lastName: "Doctor",
-            email: 'existing1.email@example.com',
-            password: 'password123',
-            phone: '1234567890',
-            specialty: 'Cardiology',
+        await createDoctor({
+            ...doctorData,
             licenseNumber: '123456',
-        }).save();
+        });
 
         const response = await request(app)
             .post('/api/doctors/register')
             .send({
-                firstName: 'New',
-                lastName: "User",
-                email: 'existing.email@example.com',
-                password: 'password123',
-                phone: '1234567890',
-                specialty: 'Cardiology',
+                ...doctorData,
                 licenseNumber: '123456',
             })
             .expect(400);
 
         expect(response.body).toHaveProperty('message', 'License Number already exists');
     });
-
 
     it('should return 400 if required fields are missing', async () => {
         const response = await request(app)
@@ -120,13 +112,8 @@ describe('Doctor Registration', () => {
         const response = await request(app)
             .post('/api/doctors/register')
             .send({
-                firstName: 'Jane',
-                lastName: "Smith",
+                ...doctorData,
                 email: 'invalid-email',
-                password: 'password123',
-                phone: '1234567890',
-                specialty: 'Cardiology',
-                licenseNumber: '12345',
             })
             .expect(400);
 
@@ -138,13 +125,8 @@ describe('Doctor Registration', () => {
         const response = await request(app)
             .post('/api/doctors/register')
             .send({
-                firstName: 'Jane',
-                lastName: "Smith",
-                email: 'jane.smith@example.com',
+                ...doctorData,
                 password: '123',
-                phone: '1234567890',
-                specialty: 'Cardiology',
-                licenseNumber: '12345',
             })
             .expect(400);
 
