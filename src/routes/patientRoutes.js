@@ -12,5 +12,6 @@ router.post("/register", registerPatientValidationRules, patientController.regis
 router.post("/login", loginPatientValidationRules, patientController.loginPatient);
 
 router.get("/:id/profile", authMiddleware, patientController.getPatientProfile);
+router.put("/:id/profile", authMiddleware, patientController.updatePatientProfile);
 
 module.exports = router;

@@ -29,7 +29,7 @@ const authMiddleware = (req, res, next) => {
         req.user = decoded.user;
         next();
     } catch (error) {
-        console.error(error.message);
+        // console.error(error.message);
         res.status(401).json({ message: "Authorization denied, invalid token" });
     }
 };

@@ -88,6 +88,7 @@ describe('Doctor Registration', () => {
             .post('/api/doctors/register')
             .send({
                 ...doctorData,
+                email: "john.smith@example.com",
                 licenseNumber: '123456',
             })
             .expect(400);

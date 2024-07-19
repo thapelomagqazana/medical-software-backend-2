@@ -4,7 +4,7 @@ const jwt = require("jsonwebtoken");
 
 require('dotenv').config();
 
-exports.createPatient = async (patientData) => {
+exports.createPatientService = async (patientData) => {
     const existingPatient = await Patient.findOne({ email: patientData.email });
     if (existingPatient) {
         throw new Error("Email already exists");
@@ -19,7 +19,7 @@ exports.createPatient = async (patientData) => {
     return patient;
 };
 
-exports.loginPatient = async ({ email, password }) => {
+exports.loginPatientService = async ({ email, password }) => {
     try {
         let patient = await Patient.findOne({ email });
 
@@ -45,8 +45,21 @@ exports.loginPatient = async ({ email, password }) => {
     }
 };
 
-exports.getPatientProfile = async (id) => {
+exports.getPatientProfileService = async (id) => {
     const patient = await Patient.findById(id);
+    if (!patient) {
+        throw new Error("Patient not found");
+    }
+    return patient;
+};
+
+exports.updatePatientProfileService = async (id, updateData) => {
+    const existingPatient = await Patient.findOne({ email: updateData.email });
+    if (existingPatient) {
+        throw new Error("Email already exists");
+    }
+
+    const patient = await Patient.findByIdAndUpdate(id, updateData, { new: true });
     if (!patient) {
         throw new Error("Patient not found");
     }

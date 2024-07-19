@@ -1,8 +1,9 @@
 const { validationResult } = require('express-validator');
 const { 
-    createPatient,
-    getPatientProfile,
-    loginPatient } = require("../services/patient.service");
+    createPatientService,
+    getPatientProfileService,
+    loginPatientService,
+    updatePatientProfileService } = require("../services/patient.service");
 
 exports.registerPatient = async (req, res) => {
     const errors = validationResult(req);
@@ -12,7 +13,7 @@ exports.registerPatient = async (req, res) => {
     
     try {
         const patientData = req.body;
-        const patient = await createPatient(patientData);
+        const patient = await createPatientService(patientData);
         res.status(201).json(patient);
     } catch (error) {
         res.status(400).json({ message: error.message });
@@ -27,7 +28,7 @@ exports.loginPatient = async (req, res) => {
 
     try {
         const patientData = req.body;
-        const token = await loginPatient({ email: patientData.email, password: patientData.password});
+        const token = await loginPatientService({ email: patientData.email, password: patientData.password});
         res.status(200).json({ token: token });
     } catch (error) {
         res.status(400).json({ message: error.message });
@@ -37,7 +38,18 @@ exports.loginPatient = async (req, res) => {
 exports.getPatientProfile = async (req, res) => {
     try {
         const patientId = req.params.id;
-        const patient = await getPatientProfile(patientId);
+        const patient = await getPatientProfileService(patientId);
+        res.status(200).json(patient);
+    } catch (error) {
+        res.status(404).json({ message: error.message });
+    }
+};
+
+exports.updatePatientProfile = async (req, res) => {
+    try {
+        const patientId = req.params.id;
+        const updateData = req.body;
+        const patient = await updatePatientProfileService(patientId, updateData);
         res.status(200).json(patient);
     } catch (error) {
         res.status(404).json({ message: error.message });
