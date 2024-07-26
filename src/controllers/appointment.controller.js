@@ -118,7 +118,6 @@ exports.updateAppointment = async (req, res) => {
     
     try {
       const { appointmentId, id } = req.params;
-      console.log(req.params);
       const updateData = req.body;
       const appointment = await updateAppointmentService(appointmentId, id, updateData);
       res.status(200).json(appointment);

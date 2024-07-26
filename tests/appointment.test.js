@@ -214,6 +214,34 @@ describe('Appointment API', () => {
         expect(response.body).toHaveProperty('reason', updatedData.reason);
     });
 
+    it('should cancel an appointment', async () => {
+        const appointmentData = {
+            doctorId,
+            startTime: new Date(new Date().getTime() + 6 * 60 * 60 * 1000),
+            endTime: new Date(new Date().getTime() + 7 * 60 * 60 * 1000),
+            reason: 'Consultation',
+        };
+
+        const response1 = await request(app)
+            .post(`/api/patients/${patientId}/appointments`)
+            .set('Authorization', `Bearer ${userAuthToken}`)
+            .send(appointmentData);
+        
+        const updatedData = {
+            status: "cancelled"
+        };
+
+        const appointmentId = response1.body._id;
+
+        const response = await request(app)
+            .put(`/api/patients/${patientId}/appointments/${appointmentId}`)
+            .set('Authorization', `Bearer ${userAuthToken}`)
+            .send(updatedData)
+            .expect(200);
+
+        expect(response.body).toHaveProperty('status', updatedData.status);
+    });
+
     // Helper functions
     async function loginUser(email, password) {
         const response = await request(app)
