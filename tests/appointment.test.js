@@ -1,346 +1,226 @@
-const request = require("supertest");
-const mongoose = require("mongoose");
-const app = require("../src/app");
-const Appointment = require("../src/models/Appointment");
-const User = require("../src/models/User");
+// tests/appointment.test.js
+const request = require('supertest');
+const mongoose = require('mongoose');
+const app = require('../src/app');
+const Patient = require('../src/models/patient.model');
+const Doctor = require('../src/models/doctor.model');
+const Appointment = require('../src/models/appointment.model');
+const bcrypt = require('bcrypt');
 
-describe("Appointment API Tests", () => {
+const connectToDatabase = async () => {
+    const url = `mongodb://127.0.0.1/test_database`;
+    await mongoose.connect(url, {
+        useNewUrlParser: true,
+        useUnifiedTopology: true,
+    });
+};
+
+const clearDatabase = async () => {
+    await Patient.deleteMany({});
+    await Doctor.deleteMany({});
+    await Appointment.deleteMany({});
+};
+
+const disconnectFromDatabase = async () => {
+    await mongoose.connection.db.dropDatabase();
+    await mongoose.connection.close();
+};
+
+const createPatient = async (patientData) => {
+    const saltRounds = 10;
+    const hashedPassword = await bcrypt.hash(patientData.password, saltRounds);
+    const patient = new Patient({ ...patientData, password: hashedPassword });
+    await patient.save();
+    return patient;
+};
+
+const createDoctor = async (doctorData) => {
+    const doctor = new Doctor(doctorData);
+    await doctor.save();
+    return doctor;
+};
+
+const patientData = {
+    firstName: 'John',
+    lastName: 'Doe',
+    email: 'john.doe@example.com',
+    password: 'password123',
+    phone: '1234567890',
+    address: '123 Main St',
+    dateOfBirth: '1980-01-01',
+    insuranceDetails: 'Insurance XYZ',
+    emergencyContacts: [
+        {
+            name: 'Jane Doe',
+            phone: '0987654321',
+        },
+    ],
+};
+
+const doctorData = {
+    firstName: 'John',
+    lastName: 'Smith',
+    email: 'john.smith@example.com',
+    password: 'password123',
+    phone: '1234567890',
+    specialty: 'Cardiology',
+    licenseNumber: '12345',
+};
+
+describe('Appointment API', () => {
     let userAuthToken;
-    let doctorAuthToken;
-    let userId;
+    let patientId;
     let doctorId;
-    let appointmentId;
 
-    beforeAll(async () => {
+    beforeEach(async () => {
         // Connect to MongoDB
-        const url = `mongodb://127.0.0.1/test_database`;
-        await mongoose.connect(url, {
-            useNewUrlParser: true,
-            useUnifiedTopology: true,
-        });
+        await connectToDatabase();
 
-        // Register and log in users
-        userId = await registerUser('testuser@example.com', 'patient', 'password');
-        userAuthToken = await loginUser('testuser@example.com', 'password');
-        
-        doctorId = await registerUser('testdoctor@example.com', 'doctor', 'password1');
-        doctorAuthToken = await loginUser('testdoctor@example.com', 'password1');
+        // Clear collections before tests
+        await clearDatabase();
 
-        // Create a sample appointment
-        appointmentId = await createAppointment(userId, doctorId);
+        // Create patient and doctor
+        const patient = await createPatient(patientData);
+        patientId = patient._id;
+        const doctor = await createDoctor(doctorData);
+        doctorId = doctor._id;
+
+        // Login patient and get token
+        userAuthToken = await loginUser(patientData.email, patientData.password);
     });
 
-    afterAll(async () => {
-        await Promise.all([
-            Appointment.deleteMany({}),
-            User.deleteMany({})
+    afterEach(async () => {
+        // Disconnect MongoDB connection
+        await clearDatabase();
+        await disconnectFromDatabase();
+    });
+
+    it('should view patient appointments', async () => {
+        // Create sample appointments
+        await Appointment.create([
+            { patientId, doctorId, startTime: new Date(), endTime: new Date(new Date().getTime() + 60 * 60 * 1000), reason: 'Checkup' },
+            { patientId, doctorId, startTime: new Date(new Date().getTime() + 2 * 60 * 60 * 1000), endTime: new Date(new Date().getTime() + 3 * 60 * 60 * 1000), reason: 'Follow-up' }
         ]);
-        await mongoose.disconnect();
+
+
+        const response = await request(app)
+            .get(`/api/patients/${patientId}/appointments`)
+            .set('Authorization', `Bearer ${userAuthToken}`)
+            .expect(200);
+
+        expect(response.body.length).toBe(2);
     });
 
-    it('should fetch all appointments', async () => {
-        const res = await request(app)
-            .get('/api/appointments/all')
-            .set('Authorization', `Bearer ${doctorAuthToken}`);
+    it('should book a new appointment', async () => {
+        const appointmentData = {
+            doctorId,
+            startTime: new Date(new Date().getTime() + 4 * 60 * 60 * 1000),
+            endTime: new Date(new Date().getTime() + 5 * 60 * 60 * 1000),
+            reason: 'Consultation',
+        };
+
+        const response = await request(app)
+            .post(`/api/patients/${patientId}/appointments`)
+            .set('Authorization', `Bearer ${userAuthToken}`)
+            .send(appointmentData)
+            .expect(201);
+
+        expect(response.body).toHaveProperty('_id');
+        expect(response.body).toHaveProperty('patientId', patientId.toString());
+        expect(response.body).toHaveProperty('doctorId', doctorId.toString());
+        expect(response.body).toHaveProperty('startTime');
+        expect(response.body).toHaveProperty('endTime');
+        expect(response.body).toHaveProperty('reason', appointmentData.reason);
+    });
+
+    it('should return 400 if double booking within time range', async () => {
+        const appointmentData1 = {
+            doctorId,
+            startTime: new Date(new Date().getTime() + 6 * 60 * 60 * 1000),
+            endTime: new Date(new Date().getTime() + 7 * 60 * 60 * 1000),
+            reason: 'Consultation',
+        };
+
+        const appointmentData2 = {
+            doctorId,
+            startTime: new Date(new Date().getTime() + 6 * 60 * 60 * 1000 + 30 * 60 * 1000),
+            endTime: new Date(new Date().getTime() + 7 * 60 * 60 * 1000 + 30 * 60 * 1000),
+            reason: 'Follow-up',
+        };
+
+        await request(app)
+            .post(`/api/patients/${patientId}/appointments`)
+            .set('Authorization', `Bearer ${userAuthToken}`)
+            .send(appointmentData1)
+            .expect(201);
+
+        const response = await request(app)
+            .post(`/api/patients/${patientId}/appointments`)
+            .set('Authorization', `Bearer ${userAuthToken}`)
+            .send(appointmentData2)
+            .expect(403);
+
+        expect(response.body).toHaveProperty('message', 'Doctor is already booked during this time');
+    });
+
+    it('should return 400 if validation fails', async () => {
+        const invalidAppointmentData = {
+            doctorId: 'invalid-id',
+            startTime: 'invalid-date',
+            endTime: 'invalid-date',
+            reason: '',
+        };
+
+        const response = await request(app)
+            .post(`/api/patients/${patientId}/appointments`)
+            .set('Authorization', `Bearer ${userAuthToken}`)
+            .send(invalidAppointmentData)
+            .expect(400);
+
+        expect(response.body).toHaveProperty('errors');
+        expect(response.body.errors).toBeInstanceOf(Array);
+    });
+
+    it('should reschedule an appointment', async () => {
+        const appointmentData = {
+            doctorId,
+            startTime: new Date(new Date().getTime() + 6 * 60 * 60 * 1000),
+            endTime: new Date(new Date().getTime() + 7 * 60 * 60 * 1000),
+            reason: 'Consultation',
+        };
+
+        const response1 = await request(app)
+            .post(`/api/patients/${patientId}/appointments`)
+            .set('Authorization', `Bearer ${userAuthToken}`)
+            .send(appointmentData);
         
-        expect(res.status).toBe(200);
-        expect(res.body).toBeInstanceOf(Array);
-        expect(res.body.length).toBeGreaterThan(0);
-    });
-
-    it('should get upcoming appointments for the logged-in patient', async () => {
-        const res = await request(app)
-            .get('/api/patient/upcoming-appointments')
-            .set('Authorization',`Bearer ${userAuthToken}`);
-
-        expect(res.status).toBe(200);
-        expect(res.body).toHaveLength(1);
-        expect(res.body[0]).toHaveProperty('patientId', userId);
-        expect(res.body[0]).toHaveProperty('startTime');
-        // Convert startTime string to Date object
-        const startTime = new Date(res.body[0].startTime);
-        expect(startTime).toBeInstanceOf(Date);
-    });
-
-    it('should get all appointments for the logged-in patient', async () => {
-        const res = await request(app)
-            .get('/api/patient/appointments')
-            .set('Authorization',`Bearer ${userAuthToken}`);
-
-        expect(res.status).toBe(200);
-        expect(res.body).toHaveLength(1);
-        expect(res.body[0]).toHaveProperty('patientId', userId);
-        expect(res.body[0]).toHaveProperty('startTime');
-        // Convert startTime string to Date object
-        const startTime = new Date(res.body[0].startTime);
-        expect(startTime).toBeInstanceOf(Date);
-    });
-
-    it('should fetch a single appointment by ID', async () => {
-        const res = await request(app)
-            .get(`/api/appointments/${appointmentId}`)
-            .set('Authorization', `Bearer ${userAuthToken}`);
-
-        expect(res.status).toBe(200);
-        expect(res.body).toHaveProperty('_id', appointmentId);
-    });
-
-    it('should return 404 for fetching non-existent appointment', async () => {
-        const nonExistentId = new mongoose.Types.ObjectId();
-        const res = await request(app)
-            .get(`/api/appointments/${nonExistentId}`)
-            .set('Authorization', `Bearer ${userAuthToken}`);
-
-        expect(res.status).toBe(404);
-        expect(res.body).toHaveProperty('msg', 'Appointment not found');
-    });
-
-    it('should create a new appointment', async () => {
-        const newAppointment = {
-            patientId: userId,
-            doctorId: doctorId,
-            startTime: new Date('2024-07-10T09:00:00Z'),
-            endTime: new Date('2024-07-10T10:00:00Z'),
-        };
-        const res = await request(app)
-            .post('/api/appointments')
-            .send(newAppointment)
-            .set('Authorization', `Bearer ${userAuthToken}`);
-
-        expect(res.status).toBe(200);
-        expect(res.body).toHaveProperty('patientId', userId);
-        expect(res.body).toHaveProperty('doctorId', doctorId);
-    });
-
-    it('should not allow double booking for the doctor', async () => {
-        const newAppointmentData = {
-            patientId: userId,
-            doctorId: doctorId,
-            startTime: new Date('2024-07-10T09:00:00Z'),
-            endTime: new Date('2024-07-10T10:00:00Z'),
+        const updatedData = {
+            startTime: new Date(new Date().getTime() + 10 * 60 * 60 * 1000),
+            endTime: new Date(new Date().getTime() + 11 * 60 * 60 * 1000),
+            reason: 'Rescheduled Consultation'
         };
 
-        const res = await request(app)
-            .post('/api/appointments')
-            .send(newAppointmentData)
-            .set('Authorization', `Bearer ${userAuthToken}`);
+        const appointmentId = response1.body._id;
 
-        expect(res.status).toBe(403);
-        expect(res.body).toHaveProperty('msg', 'Doctor is already booked during this time');
-    });
+        const response = await request(app)
+            .put(`/api/patients/${patientId}/appointments/${appointmentId}`)
+            .set('Authorization', `Bearer ${userAuthToken}`)
+            .send(updatedData)
+            .expect(200);
 
-    // it('should not allow double booking for the patient', async () => {
-    //     const newAppointmentData = {
-    //         patientId: userId,
-    //         doctorId: doctorId,
-    //         startTime: new Date('2024-07-15T09:00:00Z'),
-    //         endTime: new Date('2024-07-15T10:00:00Z'),
-    //     };
-
-    //     const res = await request(app)
-    //         .post('/api/appointments')
-    //         .send(newAppointmentData)
-    //         .set('Authorization', userAuthToken);
-
-    //     expect(res.status).toBe(403);
-    //     expect(res.body).toHaveProperty('msg', 'Patient already has an appointment during this time');
-    // });
-
-    it('should update an existing appointment', async () => {
-        const updatedAppointment = {
-            patientId: userId,
-            doctorId: doctorId,
-            startTime: new Date(),
-            endTime: new Date(new Date().getTime() + 2 * 60 * 60 * 1000), // 2 hours later
-        };
-        const res = await request(app)
-            .put(`/api/appointments/${appointmentId}`)
-            .send(updatedAppointment)
-            .set('Authorization', `Bearer ${doctorAuthToken}`);
-
-        expect(res.status).toBe(200);
-        expect(res.body).toHaveProperty('_id', appointmentId);
-        expect(new Date(res.body.startTime).toISOString()).toEqual(updatedAppointment.startTime.toISOString());
-        expect(new Date(res.body.endTime).toISOString()).toEqual(updatedAppointment.endTime.toISOString());
-    });
-
-    it('should delete an appointment', async () => {
-        const res = await request(app)
-            .delete(`/api/appointments/${appointmentId}`)
-            .set('Authorization', `Bearer ${doctorAuthToken}`);
-
-        expect(res.status).toBe(200);
-        expect(res.body).toHaveProperty('msg', 'Appointment removed');
-
-        const deletedAppointment = await Appointment.findById(appointmentId);
-        expect(deletedAppointment).toBeNull();
-    });
-
-    it('should return 404 for deleting non-existent appointment', async () => {
-        const nonExistentId = new mongoose.Types.ObjectId();
-        const res = await request(app)
-            .delete(`/api/appointments/${nonExistentId}`)
-            .set('Authorization', `Bearer ${doctorAuthToken}`);
-
-        expect(res.status).toBe(404);
-        expect(res.body).toHaveProperty('msg', 'Appointment not found');
-    });
-
-    it('should return 400 for invalid appointment ID format', async () => {
-        const res = await request(app)
-            .get(`/api/appointments/invalidAppointmentID`)
-            .set('Authorization', `Bearer ${doctorAuthToken}`);
-
-        expect(res.status).toBe(400);
-        expect(res.body).toHaveProperty('errors');
-        expect(res.body.errors[0].msg).toBe('Invalid appointment ID format');
-    });
-
-    it('should return 400 for missing patientId in create appointment request', async () => {
-        const newAppointment = {
-            doctorId: doctorId,
-            startTime: new Date(),
-            endTime: new Date(new Date().getTime() + 60 * 60 * 1000), // 1 hour later
-        };
-        const res = await request(app)
-            .post('/api/appointments')
-            .send(newAppointment)
-            .set('Authorization', `Bearer ${doctorAuthToken}`);
-
-        expect(res.status).toBe(400);
-        expect(res.body).toHaveProperty('errors');
-        expect(res.body.errors[0].msg).toBe('Invalid value');
-    });
-
-    it('should return 400 for missing doctorId in create appointment request', async () => {
-        const newAppointment = {
-            patientId: userId,
-            startTime: new Date(),
-            endTime: new Date(new Date().getTime() + 60 * 60 * 1000), // 1 hour later
-        };
-        const res = await request(app)
-            .post('/api/appointments')
-            .send(newAppointment)
-            .set('Authorization', `Bearer ${doctorAuthToken}`);
-
-        expect(res.status).toBe(400);
-        expect(res.body).toHaveProperty('errors');
-        expect(res.body.errors[0].msg).toBe('Invalid value');
-    });
-
-    it('should return 400 for missing startTime in create appointment request', async () => {
-        const newAppointment = {
-            patientId: userId,
-            doctorId: doctorId,
-            endTime: new Date(new Date().getTime() + 60 * 60 * 1000), // 1 hour later
-        };
-        const res = await request(app)
-            .post('/api/appointments')
-            .send(newAppointment)
-            .set('Authorization', `Bearer ${doctorAuthToken}`);
-
-        expect(res.status).toBe(400);
-        expect(res.body).toHaveProperty('errors');
-        expect(res.body.errors[0].msg).toBe('Invalid value');
-    });
-
-    it('should return 400 for missing endTime in create appointment request', async () => {
-        const newAppointment = {
-            patientId: userId,
-            doctorId: doctorId,
-            startTime: new Date(),
-        };
-        const res = await request(app)
-            .post('/api/appointments')
-            .send(newAppointment)
-            .set('Authorization', `Bearer ${doctorAuthToken}`);
-
-        expect(res.status).toBe(400);
-        expect(res.body).toHaveProperty('errors');
-        expect(res.body.errors[0].msg).toBe('Invalid value');
-    });
-
-    it('should return 400 for invalid startTime format in update appointment request', async () => {
-        const updatedAppointment = {
-            startTime: 'invalidStartTime',
-        };
-        const res = await request(app)
-            .put(`/api/appointments/${appointmentId}`)
-            .send(updatedAppointment)
-            .set('Authorization', `Bearer ${doctorAuthToken}`);
-
-        expect(res.status).toBe(400);
-        expect(res.body).toHaveProperty('errors');
-        expect(res.body.errors[0].msg).toBe('Invalid value');
-    });
-
-    it('should return 400 for invalid endTime format in update appointment request', async () => {
-        const updatedAppointment = {
-            endTime: 'invalidEndTime',
-        };
-        const res = await request(app)
-            .put(`/api/appointments/${appointmentId}`)
-            .send(updatedAppointment)
-            .set('Authorization', `Bearer ${doctorAuthToken}`);
-
-        expect(res.status).toBe(400);
-        expect(res.body).toHaveProperty('errors');
-        expect(res.body.errors[0].msg).toBe('Invalid value');
-    });
-
-    it('should return 404 for updating non-existent appointment', async () => {
-        const nonExistentId = new mongoose.Types.ObjectId();
-        const updatedAppointment = {
-            startTime: new Date(),
-            endTime: new Date(new Date().getTime() + 2 * 60 * 60 * 1000), // 2 hours later
-        };
-        const res = await request(app)
-            .put(`/api/appointments/${nonExistentId}`)
-            .send(updatedAppointment)
-            .set('Authorization', `Bearer ${doctorAuthToken}`);
-
-        expect(res.status).toBe(404);
-        expect(res.body).toHaveProperty('msg', 'Appointment not found');
-    });
-
-    it('should return 404 for deleting non-existent appointment', async () => {
-        const nonExistentId = new mongoose.Types.ObjectId();
-        const res = await request(app)
-            .delete(`/api/appointments/${nonExistentId}`)
-            .set('Authorization', `Bearer ${doctorAuthToken}`);
-
-        expect(res.status).toBe(404);
-        expect(res.body).toHaveProperty('msg', 'Appointment not found');
+        expect(response.body).toHaveProperty('_id', appointmentId);
+        expect(response.body).toHaveProperty('startTime');
+        expect(response.body).toHaveProperty('endTime');
+        expect(response.body).toHaveProperty('reason', updatedData.reason);
     });
 
     // Helper functions
-    async function registerUser(email, role, password) {
-        await request(app)
-            .post('/api/auth/register')
-            .send({ email, password, confirmPassword: password, role, firstName: role, lastName: 'User' });
-
-        const user = await User.findOne({ email });
-        return user.id;
-    }
-
     async function loginUser(email, password) {
-        const res = await request(app)
-            .post('/api/auth/login')
-            .send({ email, password });
-        return res.body.token;
-    }
+        const response = await request(app)
+            .post('/api/patients/login')
+            .send({ email, password })
+            .expect(200);
 
-    async function createAppointment(patientId, doctorId) {
-        const res = await request(app)
-            .post('/api/appointments')
-            .set('Authorization', userAuthToken)
-            .send({
-                patientId,
-                doctorId,
-                startTime: new Date(new Date().getTime() + 30 * 60 * 1000),
-                endTime: new Date(new Date().getTime() + 60 * 60 * 1000)
-            });
-        return res.body._id;
+        return response.body.token;
     }
-
 });

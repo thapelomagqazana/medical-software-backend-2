@@ -1,4 +1,4 @@
-const Appointment = require("../models/Appointment");
+const Appointment = require("../models/appointment.model");
 
 /**
  * Retrieves all appointments from the database with doctor details.
@@ -44,45 +44,58 @@ exports.getAppointmentByIdService = async (id) => {
  * @returns {Promise<Object>} A promise that resolves to the newly created appointment object.
  * @throws {Error} If there is a scheduling conflict or a database error.
  */
-exports.createAppointmentService = async ({ patientId, doctorId, startTime, endTime }) => {
+exports.createAppointmentService = async (appointmentData) => {
     try {
+        const { doctorId, startTime, endTime, patientId } = appointmentData;
+        
+        await checkDoctorAvailability(doctorId, startTime, endTime);
+        await checkPatientAvailability(patientId, startTime, endTime);
 
-        // Check if the doctor is already booked during the specified time
-        const existingAppointment = await Appointment.findOne({
-            doctorId,
-            $or: [
-                { startTime: { $lt: endTime, $gte: startTime } },  // Check overlapping start time
-                { endTime: { $gt: startTime, $lte: endTime } }    // Check overlapping end time
-            ]
-        });
-
-        if (existingAppointment) {
-            throw new Error('Doctor is already booked during this time');
-        }
-
-        // Check if the patient is already booked during the specified time
-        const patientAppointment = await Appointment.findOne({
-            patientId,
-            $or: [
-                { startTime: { $lt: endTime, $gte: startTime } },  // Check overlapping start time
-                { endTime: { $gt: startTime, $lte: endTime } }    // Check overlapping end time
-            ]
-        });
-
-        if (patientAppointment) {
-            throw new Error('Patient already has an appointment during this time');
-        }
-
-        const newAppointment = new Appointment({
-            patientId,
-            doctorId,
-            startTime,
-            endTime,
-        });
-
-        return await newAppointment.save();
+        const newAppointment = new Appointment(appointmentData);
+        await newAppointment.save();
+        return newAppointment;
     } catch (error) {
         throw new Error(error.message);
+    }
+};
+
+const checkDoctorAvailability = async (doctorId, startTime, endTime, excludeAppointmentId = null) => {
+    const query = {
+        doctorId,
+        $or: [
+            { startTime: { $lt: endTime, $gte: startTime } },
+            { endTime: { $gt: startTime, $lte: endTime } }
+        ]
+    };
+
+    if (excludeAppointmentId) {
+        query._id = { $ne: excludeAppointmentId };
+    }
+
+    const existingAppointment = await Appointment.findOne(query);
+
+    if (existingAppointment) {
+        throw new Error('Doctor is already booked during this time');
+    }
+};
+
+const checkPatientAvailability = async (patientId, startTime, endTime, excludeAppointmentId = null) => {
+    const query = {
+        patientId,
+        $or: [
+            { startTime: { $lt: endTime, $gte: startTime } },
+            { endTime: { $gt: startTime, $lte: endTime } }
+        ]
+    };
+
+    if (excludeAppointmentId) {
+        query._id = { $ne: excludeAppointmentId };
+    }
+
+    const existingAppointment = await Appointment.findOne(query);
+
+    if (existingAppointment) {
+        throw new Error('Patient already has an appointment during this time');
     }
 };
 
@@ -94,50 +107,24 @@ exports.createAppointmentService = async ({ patientId, doctorId, startTime, endT
  * @returns {Promise<Object>} A promise that resolves to the updated appointment object.
  * @throws {Error} If the appointment does not exist, there is a scheduling conflict, or a database error occurs.
  */
-exports.updateAppointmentService = async (id, { patientId, doctorId, startTime, endTime, status }) => {
+exports.updateAppointmentService = async (appointmentId, patientId, updateData) => {
     try {
-        let appointment = await Appointment.findById(id);
+        const appointment = await Appointment.findById(appointmentId);
         if (!appointment) {
-            throw new Error("Appointment not found");
+            throw new Error('Appointment not found');
         }
-
-        // Check if the doctor is already booked during the specified time
-        if (doctorId && (doctorId !== appointment.doctorId || startTime.getTime() !== appointment.startTime.getTime() || endTime.getTime() !== appointment.endTime.getTime())) {
-            const existingDoctorAppointment = await Appointment.findOne({
-                doctorId,
-                $or: [
-                    { startTime: { $lt: endTime, $gte: startTime } },  // Check overlapping start time
-                    { endTime: { $gt: startTime, $lte: endTime } }    // Check overlapping end time
-                ]
-            });
-
-            if (existingDoctorAppointment && existingDoctorAppointment.id !== id) {
-                throw new Error('Doctor is already booked during this time');
-            }
+    
+        if (updateData.startTime || updateData.endTime) {
+            const { doctorId, startTime, endTime } = { ...appointment.toObject(), ...updateData };
+    
+            await checkDoctorAvailability(doctorId, startTime, endTime, appointmentId);
+            await checkPatientAvailability(patientId, startTime, endTime, appointmentId);
         }
-
-        // Check if the patient is already booked during the specified time
-        if (patientId && (patientId !== appointment.patientId || startTime.getTime() !== appointment.startTime.getTime() || endTime.getTime() !== appointment.endTime.getTime())) {
-            const existingPatientAppointment = await Appointment.findOne({
-                patientId,
-                $or: [
-                    { startTime: { $lt: endTime, $gte: startTime } },  // Check overlapping start time
-                    { endTime: { $gt: startTime, $lte: endTime } }    // Check overlapping end time
-                ]
-            });
-
-            if (existingPatientAppointment && existingPatientAppointment.id !== id) {
-                throw new Error('Patient already has an appointment during this time');
-            }
-        }
-
+    
+        Object.assign(appointment, updateData, { modifiedAt: new Date() });
+        await appointment.save();
+        return appointment;
         
-        appointment.patientId = patientId;
-        appointment.doctorId = doctorId;
-        appointment.startTime = startTime;
-        appointment.endTime = endTime;
-        appointment.status = status;
-        return await appointment.save();
     } catch (error) {
         throw new Error(error.message);
     }
@@ -194,15 +181,12 @@ exports.getUpcomingAppointmentsByPatientService = async (id) => {
  * @returns {Promise<Array>} A promise that resolves to an array of appointments.
  * @throws {Error} If there is a database error.
  */
-exports.getAllAppointmentsByPatientService = async (id) => {
+exports.getPatientAppointmentsService = async (patientId) => {
     try {
-        const appointments = await Appointment.find({
-            patientId: id,
+        return await Appointment.find({
+            patientId,
         }).sort({ startTime: 1 })
         .populate('doctorId', 'firstName lastName'); // Sort by ascending order of appointment start time
-
-        // console.log(upcomingAppointments);
-        return appointments;
 
     } catch (error) {
         throw new Error(error.message);

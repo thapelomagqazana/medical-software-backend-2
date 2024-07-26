@@ -3,21 +3,25 @@ const mongoose = require("mongoose");
 const appointmentSchema = new mongoose.Schema({
     patientId: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: "User",
-        required: true
+        ref: "Patient",
+        required: true,
     },
     doctorId: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: "User",
-        required: true
+        ref: "Doctor",
+        required: true,
     },
     startTime: {
         type: Date,
-        required: true
+        required: true,
     },
     endTime: {
         type: Date,
-        required: true
+        required: true,
+    },
+    reason: {
+        type: String,
+        required: true,
     },
     status: {
         type: String,
@@ -28,6 +32,12 @@ const appointmentSchema = new mongoose.Schema({
         type: Date,
         default: Date.now
     },
+    modifiedAt: {
+        type: Date,
+        default: Date.now
+    },
 });
 
-module.exports = mongoose.model("Appointment", appointmentSchema);
+const Appointment = mongoose.model("Appointment", appointmentSchema);
+
+module.exports = Appointment;

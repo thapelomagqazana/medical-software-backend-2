@@ -5,10 +5,10 @@ const {
     updateAppointmentService,
     deleteAppointmentService,
     getUpcomingAppointmentsByPatientService,
-    getAllAppointmentsByPatientService,
+    getPatientAppointmentsService,
     getAppointmentsForDoctor,
 
-} = require ("../services/appointmentService");
+} = require ("../services/appointment.service");
 
 const { validationResult } = require("express-validator");
 
@@ -82,24 +82,26 @@ exports.getAppointmentById = async (req, res) => {
  * @route   POST /api/appointments
  * @access  Public
  */
-exports.createAppointment = async (req, res) => {
+exports.bookAppointment = async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()){
         return res.status(400).json({ errors: errors.array() });
     }
 
     try {
-      const appointment = await createAppointmentService(req.body);
-      res.json(appointment);
+      const patientId = req.params.id;
+      const appointmentData = { ...req.body, patientId };
+      const appointment = await createAppointmentService(appointmentData);
+      res.status(201).json(appointment);
     } catch (err) {
-      console.error(err.message);
+      // console.error(err.message);
       if (err.message === 'Doctor is already booked during this time') {
-        return res.status(403).json({ msg: err.message });
+        return res.status(403).json({ message: err.message });
       }
       else if (err.message === 'Patient already has an appointment during this time'){
-        return res.status(403).json({ msg: err.message });
+        return res.status(403).json({ message: err.message });
       }
-      res.status(500).send('Server Error');
+      res.status(500).json({ message: err.message });
     }
 };
 
@@ -115,8 +117,12 @@ exports.updateAppointment = async (req, res) => {
     }
     
     try {
-      const appointment = await updateAppointmentService(req.params.id, req.body);
-      res.json(appointment);
+      const { appointmentId, id } = req.params;
+      console.log(req.params);
+      const updateData = req.body;
+      const appointment = await updateAppointmentService(appointmentId, id, updateData);
+      res.status(200).json(appointment);
+
     } catch (err) {
       console.error(err.message);
       if (err.message === 'Appointment not found') {
@@ -128,7 +134,7 @@ exports.updateAppointment = async (req, res) => {
       else if (err.message === 'Patient already has an appointment during this time'){
         return res.status(403).json({ msg: err.message });
       }
-      res.status(500).send('Server Error');
+      res.status(500).json({ message: err.message });
     }
 };
 
@@ -154,15 +160,15 @@ exports.getUpcomingAppointmentsByPatient = async (req, res) => {
  * @route GET /api/patient/appointments
  * @access Private
  */
-exports.getAllAppointmentsByPatient = async (req, res) => {
+exports.getPatientAppointments = async (req, res) => {
   try {
     const patientId = req.user.id;
-    const appointments = await getAllAppointmentsByPatientService(patientId);
+    const appointments = await getPatientAppointmentsService(patientId);
 
-    res.json(appointments);
+    res.status(200).json(appointments);
   } catch (error) {
-    console.error(error.message);
-    res.status(500).send("Server Error");
+    // console.error(error.message);
+    res.status(500).send({ message: error.message });
   }
 };
 
