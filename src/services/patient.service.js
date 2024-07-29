@@ -41,7 +41,7 @@ exports.loginPatientService = async ({ email, password }) => {
         return token;
     } catch (error) {
         console.error(error.message);
-        throw new Error("Server Error");
+        throw new Error(error.message);
     }
 };
 

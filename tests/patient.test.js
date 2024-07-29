@@ -77,7 +77,7 @@ describe('Patients API', () => {
             await Patient.deleteMany({});
             const response = await request(app)
                 .post('/api/patients/register')
-                .send(patientData)
+                .send({ ...patientData, confirmPassword: 'password123' })
                 .expect(201);
             
             expect(response.body).toHaveProperty('_id');
@@ -114,10 +114,20 @@ describe('Patients API', () => {
 
             const response = await request(app)
                 .post('/api/patients/register')
-                .send({ ...patientData, email: 'existing.email@example.com' })
+                .send({ ...patientData, email: 'existing.email@example.com', confirmPassword: 'password123' })
                 .expect(400);
 
             expect(response.body).toHaveProperty('message', 'Email already exists');
+        });
+
+        it('should return 400 if passwords do not match', async () => {
+
+            const response = await request(app)
+                .post('/api/patients/register')
+                .send({ ...patientData, confirmPassword: 'password1234' })
+                .expect(400);
+
+            expect(response.body).toHaveProperty('message', "Passwords do not match");
         });
 
         it('should return 400 if required fields are missing', async () => {
@@ -224,7 +234,7 @@ describe('Patients API', () => {
     async function registerPatient(patientData) {
         const response = await request(app)
             .post('/api/patients/register')
-            .send(patientData)
+            .send({ ...patientData, confirmPassword: 'password123' })
             .expect(201);
 
         return response.body._id;

@@ -24,6 +24,8 @@ router.get("/:id/profile", authMiddleware, patientController.getPatientProfile);
 router.put("/:id/profile", authMiddleware, patientController.updatePatientProfile);
 
 router.get("/:id/appointments", authMiddleware, appointmentController.getPatientAppointments);
+router.get("/:id/appointments/upcoming", authMiddleware, 
+    appointmentController.getUpcomingAppointmentsByPatient);
 router.post("/:id/appointments", 
     authMiddleware, 
     bookAppointmentValidationRules, 

@@ -13,6 +13,11 @@ exports.registerPatient = async (req, res) => {
     
     try {
         const patientData = req.body;
+
+        if (patientData.password !== patientData.confirmPassword) {
+            return res.status(400).json({ message:"Passwords do not match" });
+        }
+
         const patient = await createPatientService(patientData);
         res.status(201).json(patient);
     } catch (error) {
