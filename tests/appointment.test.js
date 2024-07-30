@@ -111,6 +111,22 @@ describe('Appointment API', () => {
         expect(response.body.length).toBe(2);
     });
 
+    it('should view patient upcoming appointments', async () => {
+        // Create sample appointments
+        await Appointment.create([
+            { patientId, doctorId, startTime: new Date(), endTime: new Date(new Date().getTime() + 60 * 60 * 1000), reason: 'Checkup' },
+            { patientId, doctorId, startTime: new Date(new Date().getTime() + 2 * 60 * 60 * 1000), endTime: new Date(new Date().getTime() + 3 * 60 * 60 * 1000), reason: 'Follow-up' }
+        ]);
+
+
+        const response = await request(app)
+            .get(`/api/patients/${patientId}/appointments/upcoming`)
+            .set('Authorization', `Bearer ${userAuthToken}`)
+            .expect(200);
+
+        expect(response.body.length).toBe(1);
+    });
+
     it('should book a new appointment', async () => {
         const appointmentData = {
             doctorId,
