@@ -164,7 +164,7 @@ describe('Doctor API', () => {
         expect(response.body.errors[0]).toHaveProperty('msg', 'Password must be at least 6 characters long');
     });
 
-    it('should fetch doctors and their slots', async () => {
+    it('should fetch slots of a single doctor', async () => {
         await Appointment.create({
             patientId: new mongoose.Types.ObjectId(),
             doctorId: doctorId,
@@ -176,19 +176,17 @@ describe('Doctor API', () => {
         const response = await request(app)
             .get('/api/doctors/slots')
             .set('Authorization', `Bearer ${userAuthToken}`)
-            .query({ date: '2023-07-01' })
+            .query({ date: '2023-07-01', doctorId: doctorId.toString() })
             .expect(200);
 
-        expect(response.body).toHaveLength(1);
-        expect(response.body[0]).toHaveProperty('doctor');
-        expect(response.body[0].slots).toBeInstanceOf(Array);
-        expect(response.body[0].slots[0]).toHaveProperty('time');
-        expect(response.body[0].slots[0]).toHaveProperty('available');
+        expect(response.body.slots).toBeInstanceOf(Array);
+        expect(response.body.slots[0]).toHaveProperty('time');
+        expect(response.body.slots[0]).toHaveProperty('available');
     });
 
     it('should fetch all doctors', async () => {
         const response = await request(app)
-            .get('/api/doctors/')
+            .get('/api/doctors')
             .set('Authorization', `Bearer ${userAuthToken}`)
             .expect(200);
             

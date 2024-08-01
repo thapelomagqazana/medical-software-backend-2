@@ -2,6 +2,7 @@ const Doctor = require("../models/doctor.model");
 const Appointment = require("../models/appointment.model");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
+const { toZonedTime } = require("date-fns-tz");
 
 exports.createDoctor = async (doctorData) => {
     const existingEmailDoctor = await Doctor.findOne({ email: doctorData.email });
@@ -51,46 +52,53 @@ exports.loginDoctorService = async ({ email, password }) => {
     }
 };
 
+
 /**
- * Get all doctors with their available and unavailable slots for a specific date.
+ * Get the available and unavailable slots for a specific doctor on a specific date.
  * @param {Date} date - The date to fetch the slots for.
- * @returns {Promise<Array>} - A promise that resolves to an array of doctors with their slots.
+ * @param {String} doctorId - The ID of the doctor to fetch the slots for.
+ * @returns {Promise<Object>} - A promise that resolves to an object containing the doctor and their slots.
  */
-exports.getDoctorsWithSlots = async (date) => {
-    const doctors = await Doctor.find({});
-    const startOfDay = new Date(date.setHours(9, 0, 0, 0));
-    const endOfDay = new Date(date.setHours(17, 0, 0, 0));
+exports.getDoctorWithSlots = async (date, doctorId) => {
+    const doctor = await Doctor.findById(doctorId);
+    if (!doctor) {
+        throw new Error("Doctor not found");
+    }
+
+    // Create local start and end times for the day in the Johannesburg time zone
+    const startOfDayLocal = new Date(date.setHours(9, 0, 0, 0));
+    const endOfDayLocal = new Date(date.setHours(17, 0, 0, 0));
 
     const isWeekend = date.getDay() === 6 || date.getDay() === 0;
     if (isWeekend) {
-        endOfDay.setHours(14);
+        endOfDayLocal.setHours(14);
     }
 
+    const timeZone = 'Asia/Dubai';
+
+    // Convert local times to UTC
+    const startOfDay = toZonedTime(startOfDayLocal, timeZone);
+    const endOfDay = toZonedTime(endOfDayLocal, timeZone);
+
+    // Generate time slots from startOfDay to endOfDay in UTC
     const timeSlots = [];
-    for (let slot = startOfDay; slot < endOfDay; slot.setMinutes(slot.getMinutes() + 60)) {
-        timeSlots.push(new Date(slot));
+    for (let slot = new Date(startOfDay); slot < endOfDay; slot = new Date(slot.getTime() + 60 * 60 * 1000)) {
+        timeSlots.push(slot);
     }
 
-    const doctorsWithSlots = await Promise.all(doctors.map(async (doctor) => {
-        const appointments = await Appointment.find({
-            doctorId: doctor._id,
-            startTime: { $gte: startOfDay, $lt: endOfDay }
-        });
+    const appointments = await Appointment.find({
+        doctorId,
+        startTime: { $gte: startOfDay, $lt: endOfDay }
+    });
 
-        const slots = timeSlots.map((slot) => {
-            const isAvailable = !appointments.some((appointment) => 
-                appointment.startTime.getTime() <= slot.getTime() &&
-                appointment.endTime.getTime() > slot.getTime()
-            );
+    const slots = timeSlots.map((slot) => {
+        const isAvailable = !appointments.some((appointment) =>
+            appointment.startTime.getTime() <= slot.getTime() &&
+            appointment.endTime.getTime() > slot.getTime()
+        );
 
-            return { time: slot.toISOString(), available: isAvailable };
-        });
+        return { time: slot.toISOString(), available: isAvailable };
+    });
 
-        return {
-            doctor,
-            slots
-        };
-    }));
-
-    return doctorsWithSlots;
+    return { slots };
 };

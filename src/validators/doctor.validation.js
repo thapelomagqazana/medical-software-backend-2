@@ -15,14 +15,17 @@ const loginDoctorValidationRules = [
     body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters long'),
 ];
 
-const validateFetchDoctorsWithSlots = [
+const validateFetchDoctorWithSlots = [
     query('date')
         .isISO8601()
         .withMessage('Date must be a valid ISO 8601 date'),
+    query('doctorId')
+        .isMongoId()
+        .withMessage('Doctor ID must be a valid Mongo ID'),
 ];
 
 module.exports = {
     registerDoctorValidationRules,
-    validateFetchDoctorsWithSlots,
+    validateFetchDoctorWithSlots,
     loginDoctorValidationRules,
 };

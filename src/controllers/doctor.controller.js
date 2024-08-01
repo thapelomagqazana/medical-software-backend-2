@@ -37,15 +37,15 @@ exports.loginDoctor = async (req, res) => {
     }
 };
 
-exports.fetchDoctorsWithSlots = async (req, res) => {
+exports.fetchDoctorWithSlots = async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
         return res.status(400).json({ errors: errors.array() });
     }
     try {
-        const { date } = req.query;
-        const doctorsWithSlots = await doctorService.getDoctorsWithSlots(new Date(date));
-        res.status(200).json(doctorsWithSlots);
+        const { date, doctorId } = req.query;
+        const doctorWithSlots = await doctorService.getDoctorWithSlots(new Date(date), doctorId);
+        res.status(200).json(doctorWithSlots);
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
