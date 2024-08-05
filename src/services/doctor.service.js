@@ -4,6 +4,9 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const { toZonedTime } = require("date-fns-tz");
 
+// Load environment variables from .env file
+require('dotenv').config();
+
 exports.createDoctor = async (doctorData) => {
     const existingEmailDoctor = await Doctor.findOne({ email: doctorData.email });
     if (existingEmailDoctor) {
@@ -74,7 +77,7 @@ exports.getDoctorWithSlots = async (date, doctorId) => {
         endOfDayLocal.setHours(14);
     }
 
-    const timeZone = 'Asia/Dubai';
+    const timeZone = process.env.TIMEZONE;
 
     // Convert local times to UTC
     const startOfDay = toZonedTime(startOfDayLocal, timeZone);
