@@ -70,7 +70,7 @@ exports.getDoctorWithSlots = async (date, doctorId) => {
 
     // Create local start and end times for the day in the Johannesburg time zone
     const startOfDayLocal = new Date(date.setHours(9, 0, 0, 0));
-    const endOfDayLocal = new Date(date.setHours(17, 0, 0, 0));
+    const endOfDayLocal = new Date(date.setHours(18, 0, 0, 0));
 
     const isWeekend = date.getDay() === 6 || date.getDay() === 0;
     if (isWeekend) {
@@ -91,7 +91,8 @@ exports.getDoctorWithSlots = async (date, doctorId) => {
 
     const appointments = await Appointment.find({
         doctorId,
-        startTime: { $gte: startOfDay, $lt: endOfDay }
+        startTime: { $gte: startOfDay, $lt: endOfDay },
+        status: "scheduled"
     });
 
     const slots = timeSlots.map((slot) => {

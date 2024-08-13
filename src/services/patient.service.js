@@ -40,7 +40,6 @@ exports.loginPatientService = async ({ email, password }) => {
         const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: "1h" });
         return token;
     } catch (error) {
-        console.error(error.message);
         throw new Error(error.message);
     }
 };

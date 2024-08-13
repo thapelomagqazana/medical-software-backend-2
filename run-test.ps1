@@ -1,11 +1,12 @@
 # Define an array of test files
 $testFiles = @(
-    "tests/doctor.test.js",
     "tests/patient.test.js",
     "tests/appointment.test.js",
     "tests/medication.test.js",
-    "tests/reminder.test.js"
+    "tests/reminder.test.js",
+    "tests/doctor.test.js"
 )
+
 
 # Loop through each test file
 foreach ($file in $testFiles) {

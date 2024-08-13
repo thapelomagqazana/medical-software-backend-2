@@ -6,13 +6,16 @@ const Patient = require('../src/models/patient.model');
 const Doctor = require('../src/models/doctor.model');
 const Appointment = require('../src/models/appointment.model');
 const bcrypt = require('bcrypt');
+// const { startServer, stopServer } = require("../src/server");
 
 const connectToDatabase = async () => {
-    const url = `mongodb://127.0.0.1/test_database`;
-    await mongoose.connect(url, {
-        useNewUrlParser: true,
-        useUnifiedTopology: true,
-    });
+    if (mongoose.connection.readyState === 0) {
+        const url = `mongodb://127.0.0.1/test_database`;
+        await mongoose.connect(url, {
+            useNewUrlParser: true,
+            useUnifiedTopology: true,
+        });
+    }
 };
 
 const clearDatabase = async () => {
@@ -22,8 +25,10 @@ const clearDatabase = async () => {
 };
 
 const disconnectFromDatabase = async () => {
-    await mongoose.connection.db.dropDatabase();
-    await mongoose.connection.close();
+    if (mongoose.connection.readyState !== 0) {
+        await mongoose.connection.db.dropDatabase();
+        await mongoose.disconnect();
+    }
 };
 
 const createPatient = async (patientData) => {
@@ -72,6 +77,14 @@ describe('Appointment API', () => {
     let patientId;
     let doctorId;
 
+    // beforeAll(async () => {
+    //     await startServer();
+    // });
+    
+    // afterAll(async () => {
+    //     await stopServer();
+    // });
+
     beforeEach(async () => {
         // Connect to MongoDB
         await connectToDatabase();
@@ -93,6 +106,7 @@ describe('Appointment API', () => {
         // Disconnect MongoDB connection
         await clearDatabase();
         await disconnectFromDatabase();
+        mongoose.connection.close();
     });
 
     it('should view patient appointments', async () => {

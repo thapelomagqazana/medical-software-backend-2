@@ -36,6 +36,7 @@ exports.loginPatient = async (req, res) => {
         const token = await loginPatientService({ email: patientData.email, password: patientData.password});
         res.status(200).json({ token: token });
     } catch (error) {
+        // console.log(error.message);
         res.status(400).json({ message: error.message });
     }
 };

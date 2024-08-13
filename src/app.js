@@ -48,9 +48,9 @@ app.use("/api/doctors", doctorRoutes);
 // app.use("/api/doctors", doctorRoutes);
 
 // Catch unhandled routes
-// app.all('*', (req, res) => {
-//     res.status(404).send(`Cannot find ${req.originalUrl} on this server!`);
-// });
+app.all('*', (req, res) => {
+    res.status(404).send(`Cannot find ${req.originalUrl} on this server!`);
+});
 
 /**
  * @description Default route to check if the API is running.

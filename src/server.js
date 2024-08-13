@@ -29,5 +29,5 @@ connectDB();
  * @param {function} callback - The callback function to execute once the server is running.
  */
 app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
+    console.log(`${new Date()}: Server is running on port ${PORT}`);
 });

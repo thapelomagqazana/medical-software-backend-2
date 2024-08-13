@@ -62,6 +62,7 @@ exports.createAppointmentService = async (appointmentData) => {
 const checkDoctorAvailability = async (doctorId, startTime, endTime, excludeAppointmentId = null) => {
     const query = {
         doctorId,
+        status: "scheduled",
         $or: [
             { startTime: { $lt: endTime, $gte: startTime } },
             { endTime: { $gt: startTime, $lte: endTime } }
@@ -82,6 +83,7 @@ const checkDoctorAvailability = async (doctorId, startTime, endTime, excludeAppo
 const checkPatientAvailability = async (patientId, startTime, endTime, excludeAppointmentId = null) => {
     const query = {
         patientId,
+        status: "scheduled",
         $or: [
             { startTime: { $lt: endTime, $gte: startTime } },
             { endTime: { $gt: startTime, $lte: endTime } }
