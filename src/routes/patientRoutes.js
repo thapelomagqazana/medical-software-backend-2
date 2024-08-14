@@ -7,10 +7,14 @@ const authMiddleware = require("../middleware/authMiddleware");
 const { grantAccess } = require('../middleware/rbacMiddleware');
 const { 
     registerPatientValidationRules,
-    loginPatientValidationRules } = require("../validators/patient.validation");
+    loginPatientValidationRules,
+    validatePatientId } = require("../validators/patient.validation");
 const { 
     bookAppointmentValidationRules,
     updateAppointmentValidationRules } = require("../validators/appointment.validation");
+
+const { 
+    updateMedicationValidationRules } = require("../validators/medication.validation")
 
 const { 
     setReminderValidationRules } = require("../validators/reminder.validation");
@@ -36,7 +40,16 @@ router.put('/:id/appointments/:appointmentId',
     appointmentController.updateAppointment);
 
 
-router.get("/:id/medications", authMiddleware, medicationController.getPatientMedications);
+router.get("/:patientId/medications", 
+    authMiddleware,
+    validatePatientId, 
+    medicationController.getPatientMedications);
+
+router.put("/:patientId/medications/:medicationId",
+    authMiddleware,
+    updateMedicationValidationRules,
+    medicationController.updateMedication);
+
 router.post("/:id/medications/reminders", 
     authMiddleware, 
     setReminderValidationRules, 

@@ -1,4 +1,4 @@
-const { body } = require('express-validator');
+const { body, check } = require('express-validator');
 
 const registerPatientValidationRules = [
     body('firstName').notEmpty().withMessage('First Name is required'),
@@ -19,7 +19,12 @@ const loginPatientValidationRules = [
     body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters long'),
 ];
 
+const validatePatientId = [
+    check("patientId", "Patient ID must be a valid MongoDB ObjectID").isMongoId(),
+];
+
 module.exports = {
     registerPatientValidationRules,
-    loginPatientValidationRules
+    loginPatientValidationRules,
+    validatePatientId
 };

@@ -70,6 +70,8 @@ describe('Medication API', () => {
     let userAuthToken;
     let patientId;
     let doctorId;
+    let medication;
+    let medicationId;
 
     beforeAll(async () => {
         // Connect to MongoDB
@@ -86,6 +88,25 @@ describe('Medication API', () => {
 
         // Login patient and get token
         userAuthToken = await loginUser(patientData.email, patientData.password);
+
+    });
+
+    beforeEach(async () => {
+        // Create mock medication data
+        medication = await Medication.create({
+            patientId: patientId,
+            name: "Aspirin",
+            dosage: "100mg",
+            frequency: "Daily",
+            startDate: new Date(),
+            endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+            prescribedBy: doctorId,
+        });
+        medicationId = medication._id;
+    });
+
+    afterEach(async () => {
+        await Medication.deleteMany({});
     });
 
     afterAll(async () => {
@@ -95,38 +116,77 @@ describe('Medication API', () => {
     });
 
     it('should view patient medications', async () => {
-        // Create sample medications
-        await Medication.create([
-            {
-                patientId,
-                name: 'Medication 1',
-                dosage: '10mg',
-                frequency: 'Once a day',
-                startDate: new Date(),
-                endDate: new Date(new Date().getTime() + 7 * 24 * 60 * 60 * 1000),
-                prescribedBy: doctorId,
-                notes: 'Take with food',
-            },
-            {
-                patientId,
-                name: 'Medication 2',
-                dosage: '20mg',
-                frequency: 'Twice a day',
-                startDate: new Date(),
-                endDate: new Date(new Date().getTime() + 14 * 24 * 60 * 60 * 1000),
-                prescribedBy: doctorId,
-                notes: 'Avoid alcohol',
-            },
-        ]);
 
         const response = await request(app)
             .get(`/api/patients/${patientId}/medications`)
             .set('Authorization', `Bearer ${userAuthToken}`)
             .expect(200);
 
-        expect(response.body.length).toBe(2);
-        expect(response.body[0]).toHaveProperty("name");
+        expect(response.body.length).toBe(1);
+        expect(response.body[0]).toHaveProperty("name", "Aspirin");
     });
+
+    it("should return 404 if no medications found", async () => {
+        await Medication.deleteMany({});
+
+        const res = await request(app)
+            .get(`/api/patients/${patientId}/medications`)
+            .set('Authorization', `Bearer ${userAuthToken}`);
+
+        expect(res.statusCode).toEqual(404);
+        expect(res.body).toHaveProperty("message", "No medications found for this patient.");
+    });
+
+    it("should return 400 if patientId is invalid", async () => {
+        const res = await request(app)
+            .get(`/api/patients/invalidId/medications`)
+            .set('Authorization', `Bearer ${userAuthToken}`);
+
+        expect(res.statusCode).toEqual(400);
+        expect(res.body.errors[0]).toHaveProperty("msg", "Patient ID must be a valid MongoDB ObjectID");
+    });
+
+    it("should update a medication", async () => {
+        const response = await request(app)
+            .put(`/api/patients/${patientId}/medications/${medicationId}`)
+            .send({
+                dosage: "150mg",
+                frequency: "Twice Daily",
+            })
+            .set('Authorization', `Bearer ${userAuthToken}`);
+        
+        // console.log(response);
+        expect(response.status).toBe(200);
+        expect(response.body.dosage).toBe("150mg");
+        expect(response.body.frequency).toBe("Twice Daily");
+    });
+
+    it("should return 400 if validation fails", async () => {
+        const response = await request(app)
+            .put(`/api/patients/${patientId}/medications/${medicationId}`)
+            .send({
+                dosage: 150, // Invalid: should be a string
+            })
+            .set('Authorization', `Bearer ${userAuthToken}`);
+        
+        expect(response.status).toBe(400);
+        expect(response.body.errors[0].msg).toBe("Dosage must be a string");
+    });
+
+    it("should return 404 if the medication does not exist", async () => {
+        const invalidMedicationId = new mongoose.Types.ObjectId();
+        const response = await request(app)
+            .put(`/api/patients/${patientId}/medications/${invalidMedicationId}`)
+            .send({
+                dosage: "150mg",
+                frequency: "Twice Daily",
+            })
+            .set('Authorization', `Bearer ${userAuthToken}`);
+
+        expect(response.status).toBe(400);
+        expect(response.body.message).toBe("Medication not found or does not belong to this patient");
+    });
+
 
     // Helper functions
     async function loginUser(email, password) {
